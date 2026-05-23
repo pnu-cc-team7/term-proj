@@ -1,6 +1,6 @@
 # Makefile
 
-.PHONY: help api-gen clean gen-ts-axios gen-java gen-ts-nestjs gen-custom
+.PHONY: help api-gen clean gen-ts-axios gen-dart-dio gen-java gen-ts-nestjs gen-python-fastapi gen-go-server gen-custom
 
 # 도움말
 help: ## 명령어 도움말 보기
@@ -10,47 +10,35 @@ api-gen: ## 어떤 언어로 코드를 생성할지 선택합니다 (대화형)
 	@echo "------------------------------------------------"
 	@echo " 🚀 어떤 환경을 위한 코드를 생성할까요? (번호 선택)"
 	@echo " 1) TypeScript (Axios) - 프론트엔드/Web"
-	@echo " 2) Java (Spring Boot) - 백엔드/Java"
-	@echo " 3) TypeScript (NestJS) - 백엔드/NestJS"
-	@echo " 4) 기타 (직접 Generator 이름 입력)"
-	@echo " 5) 추천 Generator 가이드 보기 (도움말)"
+	@echo " 2) Dart (Dio) - 프론트엔드/Flutter"
+	@echo " 3) Java (Spring Boot) - 백엔드/Java"
+	@echo " 4) TypeScript (NestJS) - 백엔드/NestJS"
+	@echo " 5) Python (FastAPI) - 백엔드/Python"
+	@echo " 6) Go (Golang) - 백엔드/Go"
+	@echo " 7) 기타 (직접 Generator 이름 입력)"
 	@echo "------------------------------------------------"
-	@read -p " 선택 (1-5): " CHOICE; \
+	@read -p " 선택 (1-7): " CHOICE; \
 	if [ "$$CHOICE" = "1" ]; then \
 		$(MAKE) gen-ts-axios; \
 	elif [ "$$CHOICE" = "2" ]; then \
-		$(MAKE) gen-java; \
+		$(MAKE) gen-dart-dio; \
 	elif [ "$$CHOICE" = "3" ]; then \
-		$(MAKE) gen-ts-nestjs; \
+		$(MAKE) gen-java; \
 	elif [ "$$CHOICE" = "4" ]; then \
+		$(MAKE) gen-ts-nestjs; \
+	elif [ "$$CHOICE" = "5" ]; then \
+		$(MAKE) gen-python-fastapi; \
+	elif [ "$$CHOICE" = "6" ]; then \
+		$(MAKE) gen-go-server; \
+	elif [ "$$CHOICE" = "7" ]; then \
 		read -p "Generator 이름 (예: go, python, dart-dio): " GEN_NAME; \
 		read -p "저장할 경로 (예: implementations/server/sdk): " GEN_DEST; \
 		$(MAKE) gen-custom GEN=$$GEN_NAME DEST=$$GEN_DEST; \
-	elif [ "$$CHOICE" = "5" ]; then \
-		$(MAKE) show-generator-guide; \
 	else \
 		echo "❌ 올바른 번호를 선택해 주세요."; \
 	fi
 
 # --- 내부 실행 타겟들 (Docker 기반) ---
-
-show-generator-guide: ## 주요 기술 스택별 추천 Generator를 안내합니다.
-	@echo ""
-	@echo "💡 \033[1m추천 OpenAPI Generator 목록\033[0m"
-	@echo "------------------------------------------------"
-	@echo " \033[36m[Frontend]\033[0m"
-	@echo "  - \033[1mtypescript-axios\033[0m : React, Vue, Next.js (가장 추천)"
-	@echo "  - \033[1mdart-dio\033[0m         : Flutter 앱 개발"
-	@echo ""
-	@echo " \033[36m[Backend]\033[0m"
-	@echo "  - \033[1mspring\033[0m           : Java Spring Boot (interfaceOnly 옵션 권장)"
-	@echo "  - \033[1mtypescript-nestjs\033[0m : NestJS 서버"
-	@echo "  - \033[1mpython-fastapi\033[0m    : Python FastAPI 서버"
-	@echo "  - \033[1mgo-server\033[0m        : Go (Golang) 서버"
-	@echo "------------------------------------------------"
-	@echo " ※ 전체 목록을 보려면 \033[33mmake list-generators\033[0m를 실행하세요."
-	@echo " ※ 상세 가이드는 \033[32mdocs/generator_overview.md\033[0m에 있습니다."
-	@echo ""
 
 list-generators: ## 사용 가능한 모든 Generator 목록을 출력합니다. (RAW 데이터)
 	@echo "🔍 사용 가능한 모든 Generator 목록을 불러오는 중..."
@@ -60,6 +48,11 @@ gen-ts-axios:
 	@echo "📦 TypeScript (Axios) 코드를 생성합니다..."
 	docker run --rm -v "$(shell pwd):/local" openapitools/openapi-generator-cli generate \
 		-i /local/specs/api/openapi.yaml -g typescript-axios -o /local/implementations/client/src/api
+
+gen-dart-dio:
+	@echo "🎯 Dart (Dio) 코드를 생성합니다..."
+	docker run --rm -v "$(shell pwd):/local" openapitools/openapi-generator-cli generate \
+		-i /local/specs/api/openapi.yaml -g dart-dio -o /local/implementations/client/src/api-dart
 
 gen-java:
 	@echo "☕ Java (Spring Boot) 인터페이스를 생성합니다..."
@@ -72,12 +65,25 @@ gen-ts-nestjs:
 	docker run --rm -v "$(shell pwd):/local" openapitools/openapi-generator-cli generate \
 		-i /local/specs/api/openapi.yaml -g typescript-nestjs -o /local/implementations/server/src/api-sdk
 
+gen-python-fastapi:
+	@echo "🐍 Python (FastAPI) 코드를 생성합니다..."
+	docker run --rm -v "$(shell pwd):/local" openapitools/openapi-generator-cli generate \
+		-i /local/specs/api/openapi.yaml -g python-fastapi -o /local/implementations/server/src/api-python
+
+gen-go-server:
+	@echo "🐹 Go (Golang) 서버 코드를 생성합니다..."
+	docker run --rm -v "$(shell pwd):/local" openapitools/openapi-generator-cli generate \
+		-i /local/specs/api/openapi.yaml -g go-server -o /local/implementations/server/src/api-go
+
 gen-custom:
 	@echo "🛠️ 사용자 정의 설정($(GEN))으로 생성합니다..."
-	docker run --rm -v "$(shell pwd):/local" openapitools/openapi-generator-cli generate \
+	docker run --rm -v "$(shell pwd):/local" openapitools/openapi-generator-cli generate 
 		-i /local/specs/api/openapi.yaml -g $(GEN) -o /local/$(DEST)
 
 clean: ## 생성된 모든 API 코드 삭제 (초기화)
 	rm -rf implementations/client/src/api/*
+	rm -rf implementations/client/src/api-dart/*
 	rm -rf implementations/server/src/api-sdk/*
+	rm -rf implementations/server/src/api-python/*
+	rm -rf implementations/server/src/api-go/*
 	@echo "🧹 생성된 코드들이 모두 삭제되었습니다."
