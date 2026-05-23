@@ -1,12 +1,13 @@
 # OpenAPI Generator 통합 가이드
 
-우리 프로젝트는 `specs/api/openapi.yaml` 설계도를 **단일 진실 공급원(Single Source of Truth)**으로 삼습니다. 
+우리 프로젝트는 `specs/api/openapi.yaml` 설계도를 단일 진실 공급원(Single Source of Truth)으로 삼습니다.
 
 ---
 
 ## 1. 기본 원칙
 - **직접 수정**: API 구조를 바꾸고 싶다면, 스프레드시트나 다른 도구 대신 `specs/api/openapi.yaml` 파일을 직접 수정합니다. (팀원과의 합의가 선행되어야 합니다!)
 - **코드 자동 생성**: 수정된 명세를 바탕으로 각자의 언어에 맞는 코드를 자동으로 생성합니다.
+- 참고: `specs/api/openapi.yaml`은 마크다운 문서가 아니라 YAML 파일이라서, GitHub 파일 화면에서는 Markdown 강조가 렌더링되지 않습니다.
 
 ---
 
