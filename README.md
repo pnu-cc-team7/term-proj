@@ -21,3 +21,12 @@
 1. **웰컴 가이드 확인**: [웰컴 가이드](docs/welcome_guide.md)를 통해 팀의 기본 방향을 이해합니다.
 2. **명세 확인**: `specs/api/openapi.yaml` 파일을 열어 우리가 어떤 기능을 만들기로 했는지 살펴봅니다.
 3. **개발 시작**: `make api-gen` 명령어로 통신 코드를 자동 생성하고 바로 개발에 착수합니다.
+
+---
+
+## 주요 공유 링크
+
+- [노션 전체 프로젝트 페이지](https://www.notion.so/mindulle/35e4abe3a8af80b7a40cda23bdc769c3?source=copy_link)
+- [이벤트 스토밍 화이트보드](https://draw.sonagi.space/shared/e60be180-9751-4423-afdd-c1987b49ee2c)
+- [기능 명세서 페이지](https://docs.google.com/spreadsheets/d/12i0c0IIqc_yO-0Ai3gJ10BGVoQv9I4vG4cb787onXi4/edit?usp=sharing)
+- [프로토타입 페이지](https://term-proj.proto.sonagi.space/)
