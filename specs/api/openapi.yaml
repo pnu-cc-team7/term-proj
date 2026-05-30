@@ -1,55 +1,41 @@
 openapi: 3.0.3
 info:
-  title: "Restaurant Social Voting API (v0.0.1 - 초단순 샘플)"
-  version: 0.0.1
+  title: Social Voting Platform API (Team 7 - Final)
+  version: 2.1.0
   description: |
-    본 명세는 '중간 보고서 제출용'으로 작성된 임시 샘플입니다.
-    
-    팀장이 프로젝트 구조와 보고서 작성을 위해 임의로 설계한 초안이며, 
-    중간 보고 이후 본격적인 개발 착수 시 팀원 간 협의를 통해 얼마든지 변경/확장될 수 있습니다.
-    
-    - 단순화 사항: 복잡한 소셜 로그인 대신 '닉네임 입력'으로 대체
-    - 범위: 텍스트 기반 투표 및 결과 조회
-    
-servers:
-  - url: http://localhost:8080/api/v1
-    description: 로컬 개발 서버
-
-tags:
-  - name: Identification
-    description: 간단 유저 식별 (로그인 대체)
-  - name: Vote
-    description: 투표 상호작용 (MVP 핵심)
+    카카오 로그인 도입 및 통계 기능이 제거된 최종 실전용 명세입니다.
+    6/7 마감을 목표로 백엔드 구현 난이도를 최소화하였습니다.
 
 paths:
-  /enter:
+  /auth/kakao:
     post:
       tags: [Identification]
-      summary: "닉네임으로 입장 (US-B01)"
-      description: "복잡한 인증 대신 닉네임만으로 세션을 식별하는 초단순 접근 방식입니다."
+      summary: 카카오 토큰으로 서비스 로그인
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               type: object
-              required: [nickname]
               properties:
-                nickname: { type: string, example: "맛잘알" }
+                accessToken:
+                  type: string
+                  description: 카카오 SDK에서 발급받은 Access Token
       responses:
         '200':
-          description: 성공
-          content:
-            application/json:
+          description: 성공 (Http-Only Cookie 발급)
+          headers:
+            Set-Cookie:
               schema:
-                type: object
-                properties:
-                  accessToken: { type: string }
-                  nickname: { type: string }
+                type: string
+                example: token=abc...; HttpOnly; Secure; SameSite=None
+        '401':
+          description: 유효하지 않은 토큰
 
   /votes:
     get:
       tags: [Vote]
-      summary: "투표 목록 조회"
+      summary: 전체 투표 목록 조회
       responses:
         '200':
           description: 성공
@@ -61,9 +47,8 @@ paths:
                   $ref: '#/components/schemas/Vote'
     post:
       tags: [Vote]
-      summary: "신규 투표 생성 (US-V01)"
-      security:
-        - bearerAuth: []
+      summary: 신규 투표 생성 (인증 필요)
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
@@ -72,14 +57,12 @@ paths:
               $ref: '#/components/schemas/VoteCreate'
       responses:
         '201':
-          description: 생성됨
+          description: 생성 성공
 
   /votes/{id}/participate:
     post:
       tags: [Vote]
-      summary: "투표 참여 (US-V02)"
-      security:
-        - bearerAuth: []
+      summary: 특정 투표에 참여 (인증 필요)
       parameters:
         - name: id
           in: path
@@ -95,12 +78,12 @@ paths:
                 optionId: { type: string }
       responses:
         '200':
-          description: 참여 완료
+          description: 참여 성공
 
   /votes/{id}/results:
     get:
       tags: [Vote]
-      summary: "투표 결과 조회 (US-V03)"
+      summary: 투표 결과(단순 득표수) 조회
       parameters:
         - name: id
           in: path
@@ -112,49 +95,49 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VoteResult'
+                type: object
+                properties:
+                  totalVotes: { type: integer }
+                  options:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        optionId: { type: string }
+                        name: { type: string }
+                        count: { type: integer }
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     Vote:
       type: object
       properties:
         id: { type: string }
         title: { type: string }
-        description: { type: string }
         options:
           type: array
-          items:
-            type: object
-            properties:
-              id: { type: string }
-              content: { type: string }
-
+          items: { $ref: '#/components/schemas/VoteOption' }
+    VoteOption:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        kakao_id: { type: string }
     VoteCreate:
       type: object
-      required: [title, options]
       properties:
         title: { type: string }
-        description: { type: string }
         options:
-          type: array
-          items: { type: string }
-
-    VoteResult:
-      type: object
-      properties:
-        voteId: { type: string }
-        totalVotes: { type: integer }
-        results:
           type: array
           items:
             type: object
             properties:
-              optionId: { type: string }
-              count: { type: integer }
-
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+              name: { type: string }
+              kakao_id: { type: string }
+              lat: { type: number }
+              lng: { type: number }
