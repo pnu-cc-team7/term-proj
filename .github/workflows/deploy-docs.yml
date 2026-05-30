@@ -8,6 +8,10 @@ on:
       - 'specs/api/openapi.yaml'
   workflow_dispatch:
 
+# 🔐 권한 명시 추가 (쓰기 권한 필요)
+permissions:
+  contents: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
