@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Social Voting Platform API (Team 7 - Final)
-  version: 2.1.0
+  version: 2.1.1
   description: |
     카카오 로그인 도입 및 통계 기능이 제거된 최종 실전용 명세입니다.
     6/7 마감을 목표로 백엔드 구현 난이도를 최소화하였습니다.
