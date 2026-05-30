@@ -43,34 +43,34 @@ gen-docs: ## API 문서 (HTML) 생성
 	@echo "🚀 Generating API Documentation (HTML)..."
 	@mkdir -p docs/api
 	docker run --rm -v "$(shell pwd):/local" openapitools/openapi-generator-cli generate \
-		-i /local/specs/api/openapi.yaml -g html2 -o /local/docs/api
+		-i /local/specs/api/final_openapi.yaml -g html2 -o /local/docs/api
 	@echo "✅ Done! docs/api/index.html"
 
 gen-ts-axios:
 	@echo "📦 TypeScript (Axios) 코드를 생성합니다..."
 	docker run --rm -v "$(shell pwd):/local" openapitools/openapi-generator-cli generate \
-		-i /local/specs/api/openapi.yaml -g typescript-axios -o /local/implementations/client/src/api
+		-i /local/specs/api/final_openapi.yaml -g typescript-axios -o /local/implementations/client/src/api
 
 gen-dart-dio:
 	@echo "🎯 Dart (Dio) 코드를 생성합니다..."
 	docker run --rm -v "$(shell pwd):/local" openapitools/openapi-generator-cli generate \
-		-i /local/specs/api/openapi.yaml -g dart-dio -o /local/implementations/client/src/api-dart
+		-i /local/specs/api/final_openapi.yaml -g dart-dio -o /local/implementations/client/src/api-dart
 
 gen-java:
 	@echo "☕ Java (Spring Boot) 인터페이스를 생성합니다..."
 	docker run --rm -v "$(shell pwd):/local" openapitools/openapi-generator-cli generate \
-		-i /local/specs/api/openapi.yaml -g spring -o /local/implementations/server \
+		-i /local/specs/api/final_openapi.yaml -g spring -o /local/implementations/server \
 		--additional-properties=interfaceOnly=true,apiPackage=com.example.api,modelPackage=com.example.model
 
 gen-python-fastapi:
 	@echo "🐍 Python (FastAPI) 코드를 생성합니다..."
 	docker run --rm -v "$(shell pwd):/local" openapitools/openapi-generator-cli generate \
-		-i /local/specs/api/openapi.yaml -g python-fastapi -o /local/implementations/server/src/api-python
+		-i /local/specs/api/final_openapi.yaml -g python-fastapi -o /local/implementations/server/src/api-python
 
 gen-go-server:
 	@echo "🐹 Go (Golang) 서버 코드를 생성합니다..."
 	docker run --rm -v "$(shell pwd):/local" openapitools/openapi-generator-cli generate \
-		-i /local/specs/api/openapi.yaml -g go-server -o /local/implementations/server/src/api-go
+		-i /local/specs/api/final_openapi.yaml -g go-server -o /local/implementations/server/src/api-go
 
 clean: ## 생성된 모든 API 코드 삭제 (초기화)
 	rm -rf implementations/client/src/api/*
