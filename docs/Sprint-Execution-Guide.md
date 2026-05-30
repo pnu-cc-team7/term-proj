@@ -40,6 +40,6 @@
 ---
 ## 💡 문서 동기화 완료 (2026-05-30)
 - **Azure 최적화**: 모든 AWS/Lambda 레퍼런스를 Azure App Service/Functions로 교체 완료.
-- **MVP 동결**: `Beggar-Map-Master-Feature-List.md` 및 Google Sheets(`Functional Spec`)를 MVP 기능 5개로 한정하여 동결.
+- **MVP 동결**: `Term-Project-MVP-Feature-List.md` 및 Google Sheets(`Functional Spec`)를 MVP 기능 5개로 한정하여 동결.
 - **API 계약**: `final_openapi.yaml`에 투표 상태(`status`) 필드를 추가하여 기능 명세와 싱크 완료.
 - **GitHub 동기화**: `pnu-cc-team7/term-proj` 저장소의 `specs/` 구조와 일치 확인.
