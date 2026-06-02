@@ -37,7 +37,7 @@ jobs:
         run: npx vite build --base ./
         working-directory: implementations/client
         env:
-          VITE_KAKAO_MAP_KEY: "987ebb0c4378e1e9ff07b62f0a35dbfd"
+          VITE_KAKAO_MAP_KEY: ${{ secrets.VITE_KAKAO_MAP_KEY }}
           VITE_ENABLE_MOCKING: "true" # 원격 환경에서도 데모를 위해 모킹 활성화
 
       - name: Deploy to Azure Static Web Apps 🚀
