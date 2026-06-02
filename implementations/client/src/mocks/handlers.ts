@@ -36,7 +36,7 @@ export const handlers = [
   }),
 
   // 3. 투표 결과 조회 모킹
-  http.get('/votes/:id/results', ({ params }) => {
+  http.get('/votes/:id/results', () => {
     return HttpResponse.json({
       totalVotes: 15,
       options: [

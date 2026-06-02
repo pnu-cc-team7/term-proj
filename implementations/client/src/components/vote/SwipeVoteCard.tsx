@@ -1,5 +1,6 @@
 import React from 'react';
-import { motion, PanInfo, useMotionValue, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useTransform } from 'framer-motion';
+import type { PanInfo } from 'framer-motion';
 import './SwipeVoteCard.css';
 
 interface SwipeVoteCardProps {
