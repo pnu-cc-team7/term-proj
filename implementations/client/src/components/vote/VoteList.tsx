@@ -1,0 +1,80 @@
+import React from 'react';
+import { StickyNote, SketchButton } from '../common';
+
+interface Vote {
+  id: string;
+  title: string;
+  status: string;
+  options: any[];
+}
+
+interface VoteListProps {
+  votes: Vote[];
+  onSelect: (voteId: string) => void;
+  onRefresh: () => void;
+}
+
+export const VoteList: React.FC<VoteListProps> = ({ votes, onSelect, onRefresh }) => {
+  return (
+    <div className="vote-list-container" style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <h2 style={{ margin: 0 }}>Active Votes</h2>
+        <SketchButton onClick={onRefresh} style={{ padding: '4px 12px', fontSize: '14px' }}>🔄 Refresh</SketchButton>
+      </div>
+
+      {votes.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <p className="scribble-text">No active votes in your neighborhood yet.</p>
+          <SketchButton variant="primary">Create the First One!</SketchButton>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+          {votes.map((vote) => (
+            <div 
+              key={vote.id} 
+              className="sketch-box" 
+              style={{ 
+                cursor: 'pointer',
+                transition: 'transform 0.2s',
+              }}
+              onClick={() => onSelect(vote.id)}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.02)')}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <h3 style={{ margin: '0 0 12px 0', fontSize: '20px' }}>{vote.title}</h3>
+                <span style={{ 
+                  fontSize: '12px', 
+                  padding: '2px 8px', 
+                  border: '1px solid var(--ink)', 
+                  borderRadius: '12px',
+                  background: vote.status === 'open' ? 'var(--highlight)' : 'var(--grid)'
+                }}>
+                  {vote.status.toUpperCase()}
+                </span>
+              </div>
+              <p className="scribble-text" style={{ margin: '0 0 16px 0', opacity: 0.8 }}>
+                {vote.options.length} candidates available
+              </p>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {vote.options.slice(0, 3).map((opt, i) => (
+                  <span key={i} style={{ fontSize: '14px' }}>
+                    {i === 0 ? '📍 ' : ' · '}{opt.name}
+                  </span>
+                ))}
+                {vote.options.length > 3 && <span>...</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ marginTop: '40px', textAlign: 'center' }}>
+        <StickyNote color="pink">
+          <b>Tip:</b><br/>
+          Select a vote to start swiping and decide with your friends!
+        </StickyNote>
+      </div>
+    </div>
+  );
+};
