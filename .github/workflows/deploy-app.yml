@@ -10,33 +10,42 @@ on:
   workflow_dispatch:
 
 jobs:
-  # --- 프론트엔드 배포 (Azure Static Web Apps) ---
+  # --- 프론트엔드 빌드 및 배포 ---
   deploy-frontend:
     runs-on: ubuntu-latest
     name: Build and Deploy Frontend
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v4
-        with:
-          submodules: true
-          lfs: false
 
-      - name: Build and Deploy 🚀
-        id: builddeploy
+      - name: Set up Node.js 🟢
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: implementations/client/package-lock.json
+
+      - name: Install and Build 🏗️
+        run: |
+          npm install
+          npm run build
+        working-directory: implementations/client
+        env:
+          VITE_KAKAO_MAP_KEY: "987ebb0c4378e1e9ff07b62f0a35dbfd"
+
+      - name: Deploy to Azure Static Web Apps 🚀
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          ###### 프로젝트 구조 설정 ######
-          app_location: "implementations/client"
-          api_location: ""
-          output_location: "dist"
-          # [치트키] 빌드 전 sed 명령어로 index.html의 경로를 강제 치환
-          app_build_command: "sed -i 's/src=\\\"\\/src\\//src=\\\"src\\//g' index.html && npm install && npm run build"
-          ##############################
+          ###### 표준화된 배포 설정 (Oryx Skip) ######
+          skip_app_build: true
+          app_location: "implementations/client/dist"
+          output_location: ""
+          #########################################
 
-  # --- 백엔드 배포 (Azure App Service) ---
+  # --- 백엔드 빌드 및 배포 ---
   deploy-backend:
     runs-on: ubuntu-latest
     name: Build and Deploy Backend
@@ -66,5 +75,4 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: "app-term-proj-team7-server"
-          # 실행 가능한 jar 파일 하나만 업로드
           package: implementations/server/build/libs/*-SNAPSHOT.jar
