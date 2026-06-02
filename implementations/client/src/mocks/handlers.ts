@@ -9,8 +9,8 @@ export const handlers = [
         title: '오늘 점심 뭐 먹을까?',
         status: 'open',
         options: [
-          { id: 'opt1', name: '김치찌개', kakao_id: '12345' },
-          { id: 'opt2', name: '돈까스', kakao_id: '67890' }
+          { id: 'opt1', name: '김치찌개 맛집', kakao_id: '12345', lat: 35.2315, lng: 129.0841 },
+          { id: 'opt2', name: '부산대 돈까스', kakao_id: '67890', lat: 35.2300, lng: 129.0825 }
         ]
       },
       {
@@ -18,8 +18,8 @@ export const handlers = [
         title: '이번 주 팀 회식 장소',
         status: 'open',
         options: [
-          { id: 'opt3', name: '삼겹살', kakao_id: '11111' },
-          { id: 'opt4', name: '회', kakao_id: '22222' }
+          { id: 'opt3', name: '정문 삼겹살', kakao_id: '11111', lat: 35.2325, lng: 129.0855 },
+          { id: 'opt4', name: '북문 회센터', kakao_id: '22222', lat: 35.2350, lng: 129.0810 }
         ]
       }
     ])

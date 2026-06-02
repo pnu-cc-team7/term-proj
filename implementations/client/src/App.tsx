@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import { SketchButton, StickyNote } from './components/common'
 import { SwipeVoteCard } from './components/vote/SwipeVoteCard'
+import { KakaoMap } from './components/vote/KakaoMap'
 import axios from 'axios'
 
 interface VoteOption {
   id: string;
   name: string;
+  lat: number;
+  lng: number;
 }
 
 interface Vote {
@@ -100,14 +103,22 @@ function App() {
                   <p className="scribble-text">Fetching options...</p>
                 </div>
               ) : votes.length > 0 && currentIndex < votes[0].options.length ? (
-                // 현재 옵션을 카드로 표시
-                <SwipeVoteCard 
-                  key={votes[0].options[currentIndex].id}
-                  id={votes[0].options[currentIndex].id}
-                  name={votes[0].options[currentIndex].name}
-                  emoji={currentIndex % 2 === 0 ? '🍕' : '🍣'} // 가짜 이모지
-                  onVote={handleVote}
-                />
+                <>
+                  <SwipeVoteCard 
+                    key={votes[0].options[currentIndex].id}
+                    id={votes[0].options[currentIndex].id}
+                    name={votes[0].options[currentIndex].name}
+                    emoji={currentIndex % 2 === 0 ? '🍕' : '🍣'} // 가짜 이모지
+                    onVote={handleVote}
+                  />
+                  <div style={{ marginTop: '420px', width: '100%' }}>
+                    <KakaoMap 
+                      lat={votes[0].options[currentIndex].lat}
+                      lng={votes[0].options[currentIndex].lng}
+                      name={votes[0].options[currentIndex].name}
+                    />
+                  </div>
+                </>
               ) : (
                 <div style={{ textAlign: 'center', marginTop: '100px' }}>
                   <p className="scribble-text">All done! No more options.</p>
