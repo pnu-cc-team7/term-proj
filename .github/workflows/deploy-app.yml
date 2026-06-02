@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # --- 프론트엔드 빌드 및 배포 ---
+  # --- 프론트엔드 빌드 및 배포 (Azure Static Web Apps) ---
   deploy-frontend:
     runs-on: ubuntu-latest
     name: Build and Deploy Frontend
@@ -28,8 +28,7 @@ jobs:
       - name: Install and Build 🏗️
         run: |
           npm install
-          # 디버그 모드 활성화하여 상세 로그 확보
-          npx vite build --base ./ --debug
+          npx vite build --base ./
         working-directory: implementations/client
         env:
           VITE_KAKAO_MAP_KEY: "987ebb0c4378e1e9ff07b62f0a35dbfd"
@@ -40,13 +39,11 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          ###### 표준화된 배포 설정 (Oryx Skip) ######
           skip_app_build: true
           app_location: "implementations/client/dist"
           output_location: ""
-          #########################################
 
-  # --- 백엔드 빌드 및 배포 ---
+  # --- 백엔드 빌드 및 배포 (Azure App Service) ---
   deploy-backend:
     runs-on: ubuntu-latest
     name: Build and Deploy Backend
