@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 declare global {
   interface Window {
@@ -14,34 +14,77 @@ interface KakaoMapProps {
 
 export const KakaoMap: React.FC<KakaoMapProps> = ({ lat, lng, name }) => {
   const container = useRef<HTMLDivElement>(null);
-  const [sdkStatus, setSdkStatus] = React.useState<'loading' | 'ready' | 'error'>('loading');
+  const [mapStatus, setMapStatus] = useState<'loading' | 'ready' | 'error'>('loading');
 
   useEffect(() => {
+    const scriptId = 'kakao-maps-sdk';
+    const apiKey = import.meta.env.VITE_KAKAO_MAP_KEY;
+
     const initMap = () => {
+      console.log('--- Kakao Map: Initializing ---');
       if (window.kakao && window.kakao.maps) {
-        setSdkStatus('ready');
-        const options = {
-          center: new window.kakao.maps.LatLng(lat, lng),
-          level: 3,
-        };
-
-        const map = new window.kakao.maps.Map(container.current, options);
-        const markerPosition = new window.kakao.maps.LatLng(lat, lng);
-        const marker = new window.kakao.maps.Marker({ position: markerPosition });
-        marker.setMap(map);
-
-        const infowindow = new window.kakao.maps.InfoWindow({
-          content: `<div style="padding:5px; font-size:12px; font-family:var(--hand);">${name}</div>`,
+        window.kakao.maps.load(() => {
+          if (!container.current) return;
+          try {
+            const options = {
+              center: new window.kakao.maps.LatLng(lat, lng),
+              level: 3,
+            };
+            const map = new window.kakao.maps.Map(container.current, options);
+            const marker = new window.kakao.maps.Marker({ 
+              position: new window.kakao.maps.LatLng(lat, lng) 
+            });
+            marker.setMap(map);
+            
+            const infowindow = new window.kakao.maps.InfoWindow({
+              content: `<div style="padding:5px; font-size:12px; font-family:var(--hand); min-width:100px; text-align:center;">${name}</div>`,
+            });
+            infowindow.open(map, marker);
+            setMapStatus('ready');
+            console.log('--- Kakao Map: Rendered! ---');
+          } catch (e) {
+            console.error('--- Kakao Map: Render Error ---', e);
+            setMapStatus('error');
+          }
         });
-        infowindow.open(map, marker);
-      } else {
-        setSdkStatus('error');
       }
     };
 
-    // SDK 로드 완료까지 잠시 대기 후 실행
-    const timer = setTimeout(initMap, 500);
-    return () => clearTimeout(timer);
+    let script = document.getElementById(scriptId) as HTMLScriptElement;
+
+    if (!script) {
+      console.log('--- Kakao Map: Creating Script ---');
+      console.log('Key:', apiKey ? 'exists' : 'MISSING');
+      console.log('Domain:', window.location.origin);
+
+      if (!apiKey) {
+        setMapStatus('error');
+        return;
+      }
+
+      script = document.createElement('script');
+      script.id = scriptId;
+      script.type = 'text/javascript';
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&libraries=services,clusterer&autoload=false`;
+      script.onload = () => initMap();
+      script.onerror = () => {
+        console.error('--- Kakao Map: Load Failed (Network/403) ---');
+        setMapStatus('error');
+      };
+      document.head.appendChild(script);
+    } else {
+      console.log('--- Kakao Map: Script already in DOM ---');
+      if (window.kakao && window.kakao.maps) {
+        initMap();
+      } else {
+        // 이미 로드 중일 수 있으므로 다시 onload를 걸어줌
+        const oldOnload = script.onload;
+        script.onload = (e) => {
+          if (oldOnload) (oldOnload as Function)(e);
+          initMap();
+        };
+      }
+    }
   }, [lat, lng, name]);
 
   return (
@@ -57,14 +100,15 @@ export const KakaoMap: React.FC<KakaoMapProps> = ({ lat, lng, name }) => {
           background: 'var(--paper-tint)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          overflow: 'hidden'
         }} 
       >
-        {sdkStatus === 'loading' && <p className="scribble-text">Loading Map...</p>}
-        {sdkStatus === 'error' && (
+        {mapStatus === 'loading' && <p className="scribble-text">Drawing map...</p>}
+        {mapStatus === 'error' && (
           <div style={{ textAlign: 'center', padding: '20px' }}>
-            <p className="scribble-text" style={{ color: 'var(--accent)' }}>🗺️ Map SDK not found</p>
-            <p style={{ fontSize: '12px', opacity: 0.7 }}>Please check your Kakao API Key</p>
+            <p className="scribble-text" style={{ color: 'var(--accent)' }}>🗺️ Map initialization failed</p>
+            <p style={{ fontSize: '12px', opacity: 0.7 }}>Check API Key or Domain (Port) registration</p>
           </div>
         )}
       </div>
