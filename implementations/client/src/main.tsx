@@ -4,7 +4,8 @@ import './index.css'
 import App from './App'
 
 async function enableMocking() {
-  if (import.meta.env.MODE !== 'development') {
+  // 개발 모드이거나, 명시적으로 VITE_ENABLE_MOCKING이 true인 경우 모킹 활성화
+  if (import.meta.env.MODE !== 'development' && import.meta.env.VITE_ENABLE_MOCKING !== 'true') {
     return
   }
 
