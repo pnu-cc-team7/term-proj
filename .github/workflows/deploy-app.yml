@@ -28,8 +28,8 @@ jobs:
       - name: Install and Build 🏗️
         run: |
           npm install
-          # npx를 통해 프로젝트 로컬의 vite를 명시적으로 실행
-          npx vite build --base ./
+          # 디버그 모드 활성화하여 상세 로그 확보
+          npx vite build --base ./ --debug
         working-directory: implementations/client
         env:
           VITE_KAKAO_MAP_KEY: "987ebb0c4378e1e9ff07b62f0a35dbfd"
