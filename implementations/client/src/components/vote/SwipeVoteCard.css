@@ -1,0 +1,87 @@
+.swipe-card-container {
+  position: absolute;
+  width: 320px;
+  height: 400px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: grab;
+  touch-action: none;
+}
+
+.swipe-card {
+  width: 100%;
+  height: 100%;
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  padding: 24px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 8px 8px 0 var(--ink);
+  overflow: hidden;
+}
+
+.paper-texture {
+  background-image: 
+    radial-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(to right, var(--grid) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.card-emoji {
+  font-size: 80px;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.card-name {
+  font-family: var(--hand);
+  font-size: 32px;
+  text-align: center;
+  color: var(--ink);
+  margin-top: 16px;
+}
+
+.card-footer {
+  border-top: 2px dashed var(--pencil);
+  padding-top: 12px;
+}
+
+/* Stamped Labels */
+.stamp {
+  position: absolute;
+  top: 20px;
+  padding: 4px 12px;
+  border: 4px solid;
+  border-radius: 8px;
+  font-family: var(--hand);
+  font-size: 24px;
+  font-weight: bold;
+  text-transform: uppercase;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.stamp.like {
+  right: 20px;
+  border-color: #4CAF50;
+  color: #4CAF50;
+  transform: rotate(15deg);
+}
+
+.stamp.nope {
+  left: 20px;
+  border-color: #F44336;
+  color: #F44336;
+  transform: rotate(-15deg);
+}
+
+.scribble-text {
+  font-family: var(--hand);
+  font-style: italic;
+  color: var(--pencil);
+  text-align: center;
+}
