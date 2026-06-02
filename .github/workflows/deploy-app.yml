@@ -29,9 +29,9 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           ###### 프로젝트 구조 설정 ######
-          app_location: "implementations/client" # 프론트엔드 소스 코드 경로 (슬래시 제거)
-          api_location: "" # (선택사항) API/Functions 경로
-          output_location: "dist" # 빌드 결과물 경로 (Vite/React 기본값)
+          app_location: "implementations/client"
+          api_location: ""
+          output_location: "dist"
           ##############################
 
   # --- 백엔드 배포 (Azure App Service) ---
@@ -57,9 +57,13 @@ jobs:
         run: ./gradlew build -x test
         working-directory: implementations/server
 
+      - name: Azure Login 🔑
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
       - name: Deploy to Azure App Service 🚀
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'app-term-proj-team7-server'
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
           package: implementations/server/build/libs/*.jar
