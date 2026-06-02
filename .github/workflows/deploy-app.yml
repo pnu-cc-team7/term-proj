@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # --- 프론트엔드 빌드 및 배포 (Azure Static Web Apps) ---
+  # --- 프론트엔드 빌드 및 배포 ---
   deploy-frontend:
     runs-on: ubuntu-latest
     name: Build and Deploy Frontend
@@ -25,10 +25,16 @@ jobs:
           cache: 'npm'
           cache-dependency-path: implementations/client/package-lock.json
 
-      - name: Install and Build 🏗️
-        run: |
-          npm install
-          npx vite build --base ./
+      - name: Install Dependencies 📦
+        run: npm install
+        working-directory: implementations/client
+
+      - name: Run Tests ✅
+        run: npm test
+        working-directory: implementations/client
+
+      - name: Build 🏗️
+        run: npx vite build --base ./
         working-directory: implementations/client
         env:
           VITE_KAKAO_MAP_KEY: "987ebb0c4378e1e9ff07b62f0a35dbfd"
@@ -43,7 +49,7 @@ jobs:
           app_location: "implementations/client/dist"
           output_location: ""
 
-  # --- 백엔드 빌드 및 배포 (Azure App Service) ---
+  # --- 백엔드 빌드 및 배포 ---
   deploy-backend:
     runs-on: ubuntu-latest
     name: Build and Deploy Backend
