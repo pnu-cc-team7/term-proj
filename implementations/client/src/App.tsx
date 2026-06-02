@@ -3,6 +3,7 @@ import './App.css'
 import { SketchButton, StickyNote } from './components/common'
 import { SwipeVoteCard } from './components/vote/SwipeVoteCard'
 import { KakaoMap } from './components/vote/KakaoMap'
+import { VoteList } from './components/vote/VoteList'
 import axios from 'axios'
 
 interface VoteOption {
@@ -15,6 +16,7 @@ interface VoteOption {
 interface Vote {
   id: string;
   title: string;
+  status: string;
   options: VoteOption[];
 }
 
@@ -23,28 +25,130 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [votes, setVotes] = useState<Vote[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [isLoading, setIsLoading] = useState(true) // 로딩 상태 추가
+  const [isLoading, setIsLoading] = useState(true)
+  const [selectedVote, setSelectedVote] = useState<Vote | null>(null)
+
+  // 투표 생성 상태
+  const [newVoteTitle, setNewVoteTitle] = useState('')
+  const [newVoteOptions, setNewVoteOptions] = useState<any[]>([])
+  const [searchKeyword, setSearchKeyword] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+
+  // 장소 검색 함수
+  const searchPlaces = () => {
+    if (!searchKeyword.trim() || !window.kakao || !window.kakao.maps.services) return;
+    
+    const ps = new window.kakao.maps.services.Places();
+    ps.keywordSearch(searchKeyword, (data: any, status: any) => {
+      if (status === window.kakao.maps.services.Status.OK) {
+        setSearchResults(data);
+      } else {
+        alert('No results found.');
+      }
+    });
+  }
+
+  const addOption = (place: any) => {
+    if (newVoteOptions.find(opt => opt.kakao_id === place.id)) {
+      alert('Already added!');
+      return;
+    }
+    setNewVoteOptions([...newVoteOptions, { 
+      name: place.place_name, 
+      lat: parseFloat(place.y), 
+      lng: parseFloat(place.x), 
+      kakao_id: place.id 
+    }]);
+    setSearchKeyword('');
+    setSearchResults([]);
+  }
 
   // MSW로부터 모킹된 데이터 패칭
-  useEffect(() => {
-    const fetchVotes = async () => {
-      setIsLoading(true)
-      try {
-        const response = await axios.get('/votes')
-        setVotes(response.data)
-      } catch (error) {
-        console.error('Failed to fetch votes:', error)
-      } finally {
-        setIsLoading(false)
-      }
+  const fetchVotes = async () => {
+    setIsLoading(true)
+    try {
+      const response = await axios.get('/votes')
+      setVotes(response.data)
+    } catch (error) {
+      console.error('Failed to fetch votes:', error)
+    } finally {
+      setIsLoading(false)
     }
+  }
+
+  useEffect(() => {
     fetchVotes()
   }, [])
 
-  const handleVote = (optionId: string, direction: 'left' | 'right') => {
+  const handleVote = async (optionId: string, direction: 'left' | 'right') => {
+    if (!selectedVote) return;
     console.log(`Voted ${direction} on option ${optionId}`)
-    // 다음 카드로 넘어가기 (실제로는 투표 API 호출 로직이 들어감)
-    setCurrentIndex((prev) => prev + 1)
+    
+    // LIKE한 경우에만 참여 API 호출
+    if (direction === 'right') {
+      try {
+        await axios.post(`/votes/${selectedVote.id}/participate`, { optionId });
+      } catch (e) {
+        console.error('Failed to participate in vote', e);
+      }
+    }
+    
+    // 마지막 카드인 경우 결과 페이지로 이동
+    if (currentIndex >= selectedVote.options.length - 1) {
+      setActiveTab('results')
+    } else {
+      setCurrentIndex((prev) => prev + 1)
+    }
+  }
+
+  const handleSelectVote = (voteId: string) => {
+    const vote = votes.find(v => v.id === voteId);
+    if (vote) {
+      setSelectedVote(vote);
+      setCurrentIndex(0);
+      setActiveTab('vote');
+    }
+  }
+
+  const simulateKakaoLogin = async () => {
+    if (isLoggedIn) {
+      setIsLoggedIn(false);
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      // /auth/kakao 모킹 호출
+      await axios.post('/auth/kakao', { accessToken: 'mock-access-token' });
+      setIsLoggedIn(true);
+    } catch (e) {
+      console.error('Login failed', e);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const handleCreateVote = async () => {
+    if (!newVoteTitle || newVoteOptions.length === 0) {
+      alert('Please enter a title and add at least one restaurant.');
+      return;
+    }
+    
+    try {
+      await axios.post('/votes', {
+        title: newVoteTitle,
+        options: newVoteOptions
+      });
+      alert('Vote Created Successfully!');
+      setNewVoteTitle('');
+      setNewVoteOptions([]);
+      setActiveTab('list');
+      
+      // 목록 새로고침
+      await fetchVotes();
+    } catch (e) {
+      console.error('Failed to create vote', e);
+    }
   }
 
   const navTo = (tab: string) => {
@@ -63,7 +167,7 @@ function App() {
             </span>
           </h1>
           <button 
-            onClick={() => setIsLoggedIn(!isLoggedIn)}
+            onClick={simulateKakaoLogin}
             className="sketch-btn"
             style={{ padding: '4px 12px', fontSize: '14px', background: isLoggedIn ? 'var(--paper)' : '#FEE500' }}
           >
@@ -75,8 +179,8 @@ function App() {
       <nav className="nav-bar">
         <div className="logo" onClick={() => navTo('home')}>GS</div>
         <div className={`nav-link ${activeTab === 'home' ? 'active' : ''}`} onClick={() => navTo('home')}>Home</div>
-        <div className={`nav-link ${activeTab === 'vote' ? 'active' : ''}`} onClick={() => navTo('vote')}>Vote</div>
-        <div className={`nav-link ${activeTab === 'explore' ? 'active' : ''}`} onClick={() => navTo('explore')}>Explore</div>
+        <div className={`nav-link ${activeTab === 'list' ? 'active' : ''}`} onClick={() => navTo('list')}>Explore</div>
+        <div className={`nav-link ${activeTab === 'create' ? 'active' : ''}`} onClick={() => navTo('create')}>Create</div>
       </nav>
 
       <main className="canvas">
@@ -89,50 +193,155 @@ function App() {
             <div style={{ fontSize: '64px', marginBottom: '16px' }}>🍔</div>
             <h2 style={{ fontSize: '32px' }}>Pick Your Plate</h2>
             <p className="scribble-text" style={{ marginBottom: '32px' }}>Real-time social voting platform</p>
-            <SketchButton variant="primary" onClick={() => navTo('vote')}>Start Swiping!</SketchButton>
+            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+              <SketchButton variant="primary" onClick={() => navTo('list')}>Find Votes</SketchButton>
+              <SketchButton onClick={() => navTo('create')}>New Vote</SketchButton>
+            </div>
           </div>
         )}
 
-        {activeTab === 'vote' && (
+        {activeTab === 'list' && (
+          <VoteList votes={votes} onSelect={handleSelectVote} onRefresh={fetchVotes} />
+        )}
+
+        {activeTab === 'create' && (
+          <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+            <h2 style={{ marginBottom: '24px' }}>New Restaurant Vote</h2>
+            <div className="sketch-box" style={{ padding: '32px' }}>
+              <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Vote Topic</label>
+              <input 
+                className="sketch-input" 
+                placeholder="e.g. Best Pizza for Friday Night" 
+                value={newVoteTitle}
+                onChange={(e) => setNewVoteTitle(e.target.value)}
+              />
+
+              <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Add Options</label>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', position: 'relative' }}>
+                <input 
+                  className="sketch-input" 
+                  style={{ marginBottom: 0 }} 
+                  placeholder="Search restaurant..." 
+                  value={searchKeyword}
+                  onChange={(e) => setSearchKeyword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && searchPlaces()}
+                />
+                <button className="sketch-btn" style={{ whiteSpace: 'nowrap' }} onClick={searchPlaces}>Search</button>
+                
+                {searchResults.length > 0 && (
+                  <div className="sketch-box" style={{ 
+                    position: 'absolute', 
+                    top: '50px', 
+                    left: 0, 
+                    right: 0, 
+                    zIndex: 10, 
+                    maxHeight: '200px', 
+                    overflowY: 'auto',
+                    padding: '8px'
+                  }}>
+                    {searchResults.map((place) => (
+                      <div 
+                        key={place.id} 
+                        style={{ padding: '8px', borderBottom: '1px dashed var(--rule)', cursor: 'pointer' }}
+                        onClick={() => addOption(place)}
+                      >
+                        <div style={{ fontWeight: 'bold' }}>{place.place_name}</div>
+                        <div style={{ fontSize: '12px', opacity: 0.7 }}>{place.address_name}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                {newVoteOptions.map((opt, idx) => (
+                  <div key={idx} style={{ padding: '8px', borderBottom: '1px dashed var(--rule)', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>📍 {opt.name}</span>
+                    <button onClick={() => setNewVoteOptions(newVoteOptions.filter((_, i) => i !== idx))} style={{ border: 'none', background: 'none', cursor: 'pointer' }}>✕</button>
+                  </div>
+                ))}
+              </div>
+
+              <SketchButton variant="primary" style={{ width: '100%' }} onClick={handleCreateVote}>Publish Vote</SketchButton>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'vote' && selectedVote && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '20px', height: '500px', position: 'relative' }}>
-            <h2 style={{ marginBottom: '20px' }}>{votes[0]?.title || 'Voting'}</h2>
+            <h2 style={{ marginBottom: '20px' }}>{selectedVote.title}</h2>
             
             <div className="card-stack" style={{ position: 'relative', width: '320px', height: '400px' }}>
               {isLoading ? (
                 <div style={{ textAlign: 'center', marginTop: '100px' }}>
                   <p className="scribble-text">Fetching options...</p>
                 </div>
-              ) : votes.length > 0 && currentIndex < votes[0].options.length ? (
+              ) : selectedVote.options.length > currentIndex ? (
                 <>
                   <SwipeVoteCard 
-                    key={votes[0].options[currentIndex].id}
-                    id={votes[0].options[currentIndex].id}
-                    name={votes[0].options[currentIndex].name}
-                    emoji={currentIndex % 2 === 0 ? '🍕' : '🍣'} // 가짜 이모지
+                    key={selectedVote.options[currentIndex].id}
+                    id={selectedVote.options[currentIndex].id}
+                    name={selectedVote.options[currentIndex].name}
+                    emoji={currentIndex % 2 === 0 ? '🍕' : '🍣'} 
                     onVote={handleVote}
                   />
                   <div style={{ marginTop: '420px', width: '100%' }}>
                     <KakaoMap 
-                      lat={votes[0].options[currentIndex].lat}
-                      lng={votes[0].options[currentIndex].lng}
-                      name={votes[0].options[currentIndex].name}
+                      lat={selectedVote.options[currentIndex].lat}
+                      lng={selectedVote.options[currentIndex].lng}
+                      name={selectedVote.options[currentIndex].name}
                     />
                   </div>
                 </>
               ) : (
                 <div style={{ textAlign: 'center', marginTop: '100px' }}>
                   <p className="scribble-text">All done! No more options.</p>
-                  <SketchButton onClick={() => setCurrentIndex(0)}>Restart</SketchButton>
+                  <SketchButton onClick={() => setActiveTab('results')}>View Results</SketchButton>
                 </div>
               )}
             </div>
           </div>
         )}
-        
-        {(activeTab !== 'home' && activeTab !== 'vote') && (
-          <div style={{ textAlign: 'center', marginTop: '40px' }}>
-            <h2 style={{ fontSize: '28px' }}>{activeTab.toUpperCase()} Section</h2>
-            <p className="scribble-text">Coming soon...</p>
+
+        {activeTab === 'results' && selectedVote && (
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <h2 style={{ marginBottom: '24px' }}>Results: {selectedVote.title}</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+              <div className="sketch-box">
+                <h3 style={{ marginBottom: '16px' }}>🏆 Current Winner</h3>
+                <div style={{ fontSize: '48px', marginBottom: '8px' }}>🍕</div>
+                <h4>{selectedVote.options[0]?.name}</h4>
+                <p className="scribble-text">Neighbors' favorite choice!</p>
+                
+                <div style={{ marginTop: '24px' }}>
+                  {selectedVote.options.map((opt, i) => (
+                    <div key={opt.id} style={{ marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                        <span>{opt.name}</span><span>{i === 0 ? '65%' : '35%'}</span>
+                      </div>
+                      <div style={{ height: '8px', background: 'var(--paper-tint)', border: '1px solid var(--ink)', marginTop: '4px' }}>
+                        <div style={{ 
+                          width: i === 0 ? '65%' : '35%', 
+                          height: '100%', 
+                          background: i === 0 ? 'var(--highlight)' : 'var(--accent)',
+                          opacity: i === 0 ? 1 : 0.5 
+                        }}></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <KakaoMap 
+                  lat={selectedVote.options[0]?.lat} 
+                  lng={selectedVote.options[0]?.lng} 
+                  name={selectedVote.options[0]?.name} 
+                />
+                <div style={{ marginTop: '16px' }}>
+                  <SketchButton variant="primary" style={{ width: '100%' }} onClick={() => navTo('list')}>Back to List</SketchButton>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </main>
