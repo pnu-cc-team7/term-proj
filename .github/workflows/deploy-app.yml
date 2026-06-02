@@ -32,7 +32,8 @@ jobs:
           app_location: "implementations/client"
           api_location: ""
           output_location: "dist"
-          app_build_command: "npm install && npm run build"
+          # [치트키] 빌드 전 sed 명령어로 index.html의 경로를 강제 치환
+          app_build_command: "sed -i 's/src=\\\"\\/src\\//src=\\\"src\\//g' index.html && npm install && npm run build"
           ##############################
 
   # --- 백엔드 배포 (Azure App Service) ---
@@ -65,5 +66,5 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: "app-term-proj-team7-server"
-          # 중복 매칭 방지를 위해 plain jar를 제외한 실행 가능한 jar만 특정
+          # 실행 가능한 jar 파일 하나만 업로드
           package: implementations/server/build/libs/*-SNAPSHOT.jar
