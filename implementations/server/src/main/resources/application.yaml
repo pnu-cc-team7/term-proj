@@ -1,3 +1,6 @@
+server:
+  port: ${PORT:8080}
+
 spring:
   application:
     name: termproject
@@ -21,3 +24,14 @@ spring:
       hibernate:
         format_sql: true
         dialect: ${HIBERNATE_DIALECT:org.hibernate.dialect.H2Dialect}
+
+app:
+  cors:
+    origins: ${CORS_ORIGINS:http://localhost:5173}
+  jwt:
+    secret: ${JWT_SECRET}
+    expires-in-seconds: ${JWT_EXPIRES_IN_SECONDS:604800}
+    cookie-name: ${JWT_COOKIE_NAME:token}
+    issuer: ${JWT_ISSUER:term-proj-api}
+  kakao:
+    user-me-url: ${KAKAO_USER_ME_URL:https://kapi.kakao.com/v2/user/me}
