@@ -27,6 +27,7 @@ function App() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedVote, setSelectedVote] = useState<Vote | null>(null)
+  const [resultsData, setResultsData] = useState<any>(null)
 
   // 투표 생성 상태
   const [newVoteTitle, setNewVoteTitle] = useState('')
@@ -79,6 +80,24 @@ function App() {
   useEffect(() => {
     fetchVotes()
   }, [])
+
+  // 결과 데이터 페칭
+  useEffect(() => {
+    const fetchResults = async () => {
+      if (activeTab === 'results' && selectedVote) {
+        setIsLoading(true);
+        try {
+          const response = await axios.get(`/votes/${selectedVote.id}/results`);
+          setResultsData(response.data);
+        } catch (error) {
+          console.error('Failed to fetch results:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    fetchResults();
+  }, [activeTab, selectedVote]);
 
   const handleVote = async (optionId: string, direction: 'left' | 'right') => {
     if (!selectedVote) return;
@@ -308,28 +327,44 @@ function App() {
             <h2 style={{ marginBottom: '24px' }}>Results: {selectedVote.title}</h2>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
               <div className="sketch-box">
-                <h3 style={{ marginBottom: '16px' }}>🏆 Current Winner</h3>
-                <div style={{ fontSize: '48px', marginBottom: '8px' }}>🍕</div>
-                <h4>{selectedVote.options[0]?.name}</h4>
-                <p className="scribble-text">Neighbors' favorite choice!</p>
-                
-                <div style={{ marginTop: '24px' }}>
-                  {selectedVote.options.map((opt, i) => (
-                    <div key={opt.id} style={{ marginBottom: '12px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                        <span>{opt.name}</span><span>{i === 0 ? '65%' : '35%'}</span>
-                      </div>
-                      <div style={{ height: '8px', background: 'var(--paper-tint)', border: '1px solid var(--ink)', marginTop: '4px' }}>
-                        <div style={{ 
-                          width: i === 0 ? '65%' : '35%', 
-                          height: '100%', 
-                          background: i === 0 ? 'var(--highlight)' : 'var(--accent)',
-                          opacity: i === 0 ? 1 : 0.5 
-                        }}></div>
-                      </div>
+                <h3 style={{ marginBottom: '16px' }}>🏆 Current Leader</h3>
+                {isLoading ? (
+                  <p className="scribble-text">Calculating votes...</p>
+                ) : resultsData ? (
+                  <>
+                    <div style={{ fontSize: '48px', marginBottom: '8px' }}>
+                      {/* 간단히 첫 번째 항목 이모지 */}
+                      {resultsData.options[0]?.name.includes('김치') ? '🥘' : '🍕'}
                     </div>
-                  ))}
-                </div>
+                    <h4>{resultsData.options[0]?.name}</h4>
+                    <p className="scribble-text">Total {resultsData.totalVotes} people participated!</p>
+                    
+                    <div style={{ marginTop: '24px' }}>
+                      {resultsData.options.map((opt: any, i: number) => {
+                        const percentage = resultsData.totalVotes > 0 
+                          ? Math.round((opt.count / resultsData.totalVotes) * 100) 
+                          : 0;
+                        return (
+                          <div key={opt.optionId} style={{ marginBottom: i < resultsData.options.length - 1 ? '12px' : 0 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                              <span>{opt.name}</span><span>{percentage}%</span>
+                            </div>
+                            <div style={{ height: i === 0 ? '12px' : '8px', background: 'var(--paper-tint)', border: '1px solid var(--ink)', marginTop: '4px' }}>
+                              <div style={{ 
+                                width: `${percentage}%`, 
+                                height: '100%', 
+                                background: i === 0 ? 'var(--highlight)' : 'var(--accent)',
+                                opacity: i === 0 ? 1 : 0.5 
+                              }}></div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  <p className="scribble-text">No results yet.</p>
+                )}
               </div>
               <div>
                 <KakaoMap 
