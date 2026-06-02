@@ -28,8 +28,8 @@ jobs:
       - name: Install and Build 🏗️
         run: |
           npm install
-          # --base ./ 를 빌드 명령어에 직접 주입하여 경로 독립성 확보
-          ./node_modules/.bin/vite build --base ./
+          # npx를 통해 프로젝트 로컬의 vite를 명시적으로 실행
+          npx vite build --base ./
         working-directory: implementations/client
         env:
           VITE_KAKAO_MAP_KEY: "987ebb0c4378e1e9ff07b62f0a35dbfd"
@@ -40,7 +40,7 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          ###### 물리적으로 빌드된 dist 폴더만 전송 ######
+          ###### 표준화된 배포 설정 (Oryx Skip) ######
           skip_app_build: true
           app_location: "implementations/client/dist"
           output_location: ""
