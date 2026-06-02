@@ -32,6 +32,7 @@ jobs:
           app_location: "implementations/client"
           api_location: ""
           output_location: "dist"
+          app_build_command: "npm install && npm run build" # 빌드 명령어 명시
           ##############################
 
   # --- 백엔드 배포 (Azure App Service) ---
@@ -49,12 +50,10 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-        working-directory: implementations/server
-
       - name: Build with Gradle 🏗️
-        run: ./gradlew build -x test
+        run: |
+          chmod +x gradlew
+          ./gradlew build -x test
         working-directory: implementations/server
 
       - name: Azure Login 🔑
@@ -65,5 +64,5 @@ jobs:
       - name: Deploy to Azure App Service 🚀
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          app-name: "app-term-proj-team7-server"
           package: implementations/server/build/libs/*.jar
