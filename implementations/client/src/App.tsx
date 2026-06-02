@@ -20,15 +20,19 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [votes, setVotes] = useState<Vote[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [isLoading, setIsLoading] = useState(true) // 로딩 상태 추가
 
   // MSW로부터 모킹된 데이터 패칭
   useEffect(() => {
     const fetchVotes = async () => {
+      setIsLoading(true)
       try {
         const response = await axios.get('/votes')
         setVotes(response.data)
       } catch (error) {
         console.error('Failed to fetch votes:', error)
+      } finally {
+        setIsLoading(false)
       }
     }
     fetchVotes()
@@ -88,10 +92,14 @@ function App() {
 
         {activeTab === 'vote' && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '20px', height: '500px', position: 'relative' }}>
-            <h2 style={{ marginBottom: '20px' }}>{votes[0]?.title || 'Loading...'}</h2>
+            <h2 style={{ marginBottom: '20px' }}>{votes[0]?.title || 'Voting'}</h2>
             
             <div className="card-stack" style={{ position: 'relative', width: '320px', height: '400px' }}>
-              {votes.length > 0 && currentIndex < votes[0].options.length ? (
+              {isLoading ? (
+                <div style={{ textAlign: 'center', marginTop: '100px' }}>
+                  <p className="scribble-text">Fetching options...</p>
+                </div>
+              ) : votes.length > 0 && currentIndex < votes[0].options.length ? (
                 // 현재 옵션을 카드로 표시
                 <SwipeVoteCard 
                   key={votes[0].options[currentIndex].id}
