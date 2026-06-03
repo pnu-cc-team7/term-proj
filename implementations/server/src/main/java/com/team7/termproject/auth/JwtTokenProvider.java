@@ -49,5 +49,14 @@ public class JwtTokenProvider {
                 .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
+
+    public String getKakaoId(String token) {
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("kakaoId", String.class);
+    }
 }
 
