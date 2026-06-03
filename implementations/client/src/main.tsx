@@ -3,6 +3,15 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App'
 
+// Kakao SDK 초기화
+if (window.Kakao && !window.Kakao.isInitialized()) {
+  const apiKey = import.meta.env.VITE_KAKAO_MAP_KEY;
+  if (apiKey) {
+    window.Kakao.init(apiKey);
+    console.log('--- Kakao SDK Initialized (Global) ---');
+  }
+}
+
 async function enableMocking() {
   // 개발 모드이면서 VITE_ENABLE_MOCKING이 'true'인 경우에만 활성화
   if (import.meta.env.VITE_ENABLE_MOCKING !== 'true') {

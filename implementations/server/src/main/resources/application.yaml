@@ -35,3 +35,6 @@ app:
     issuer: ${JWT_ISSUER:term-proj-api}
   kakao:
     user-me-url: ${KAKAO_USER_ME_URL:https://kapi.kakao.com/v2/user/me}
+    token-url: ${KAKAO_TOKEN_URL:https://kauth.kakao.com/oauth/token}
+    client-id: ${KAKAO_CLIENT_ID:72d5e24a5f1cc81b3a7f78ca849929e5}
+    redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:5173}

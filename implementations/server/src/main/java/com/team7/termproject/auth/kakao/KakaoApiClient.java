@@ -8,6 +8,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientException;
@@ -57,7 +59,40 @@ public class KakaoApiClient implements KakaoUserClient {
         }
     }
 
+    public String getToken(String code) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("grant_type", "authorization_code");
+        params.add("client_id", properties.kakao().clientId());
+        params.add("redirect_uri", properties.kakao().redirectUri());
+        params.add("code", code);
+
+        try {
+            ResponseEntity<KakaoTokenResponse> response = restTemplate.postForEntity(
+                    properties.kakao().tokenUrl(),
+                    new HttpEntity<>(params, headers),
+                    KakaoTokenResponse.class
+            );
+
+            KakaoTokenResponse body = response.getBody();
+            if (body == null || body.access_token() == null) {
+                throw new InvalidKakaoTokenException();
+            }
+
+            return body.access_token();
+        } catch (HttpClientErrorException exception) {
+            throw new InvalidKakaoTokenException();
+        } catch (RestClientException exception) {
+            throw new KakaoApiFailureException(exception);
+        }
+    }
+
     private record KakaoUserMeResponse(Long id) {
+    }
+
+    private record KakaoTokenResponse(String access_token) {
     }
 }
 

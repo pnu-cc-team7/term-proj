@@ -6,6 +6,24 @@ import { KakaoMap } from './components/vote/KakaoMap'
 import { VoteList } from './components/vote/VoteList'
 import axios from 'axios'
 
+// API 설정
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+axios.defaults.baseURL = API_BASE_URL;
+axios.defaults.withCredentials = true;
+
+console.log('--- App Init ---', { 
+  baseURL: axios.defaults.baseURL, 
+  mocking: import.meta.env.VITE_ENABLE_MOCKING,
+  keyExists: !!import.meta.env.VITE_KAKAO_MAP_KEY 
+});
+
+declare global {
+  interface Window {
+    kakao: any;
+    Kakao: any;
+  }
+}
+
 interface VoteOption {
   id: string;
   name: string;
@@ -66,12 +84,14 @@ function App() {
 
   // MSW로부터 모킹된 데이터 패칭
   const fetchVotes = async () => {
+    if (!axios.defaults.baseURL) return; // baseURL 설정 대기
+    
     setIsLoading(true)
     try {
       const response = await axios.get('/votes')
       setVotes(response.data)
-    } catch (error) {
-      console.error('Failed to fetch votes:', error)
+    } catch (error: any) {
+      console.error('Failed to fetch votes:', error.message)
     } finally {
       setIsLoading(false)
     }
@@ -135,17 +155,55 @@ function App() {
       return;
     }
     
-    setIsLoading(true);
-    try {
-      // /auth/kakao 모킹 호출
-      await axios.post('/auth/kakao', { accessToken: 'mock-access-token' });
-      setIsLoggedIn(true);
-    } catch (e) {
-      console.error('Login failed', e);
-    } finally {
-      setIsLoading(false);
+    // 모킹 모드인 경우 실제 카카오 호출 없이 바로 로그인 처리
+    if (import.meta.env.VITE_ENABLE_MOCKING === 'true') {
+      setIsLoading(true);
+      try {
+        await axios.post('/auth/kakao', { accessToken: 'mock-access-token' });
+        setIsLoggedIn(true);
+      } catch (e) {
+        console.error('Mock login failed', e);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
     }
+
+    if (!window.Kakao || !window.Kakao.Auth) {
+      alert('카카오 로그인 모듈을 불러오는 중입니다. 잠시만 기다려주세요.');
+      return;
+    }
+
+    // 리다이렉트 방식으로 변경
+    window.Kakao.Auth.authorize({
+      redirectUri: window.location.origin
+    });
   }
+
+  // URL에서 인가 코드 체크 및 로그인 처리
+  useEffect(() => {
+    const handleAuthCode = async () => {
+      const code = new URL(window.location.href).searchParams.get('code');
+      if (code && !isLoggedIn) {
+        setIsLoading(true);
+        try {
+          console.log('Received Kakao Auth Code, requesting token...');
+          // 백엔드 인증 요청 (인가 코드를 보내고 JWT 쿠키를 받습니다)
+          await axios.post('/auth/kakao', { code });
+          setIsLoggedIn(true);
+          console.log('Login successful via Kakao Redirect');
+        } catch (e) {
+          console.error('Auth processing failed', e);
+          alert('로그인 처리 중 오류가 발생했습니다.');
+        } finally {
+          setIsLoading(false);
+          // 주소창에서 code 제거
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
+    };
+    handleAuthCode();
+  }, [isLoggedIn]);
 
   const handleCreateVote = async () => {
     if (!newVoteTitle || newVoteOptions.length === 0) {

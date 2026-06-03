@@ -26,7 +26,12 @@ public record AppProperties(Cors cors, Jwt jwt, Kakao kakao) {
     ) {
     }
 
-    public record Kakao(String userMeUrl) {
+    public record Kakao(
+            String userMeUrl,
+            String tokenUrl,
+            String clientId,
+            String redirectUri
+    ) {
     }
 }
 

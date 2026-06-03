@@ -24,8 +24,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import com.team7.termproject.auth.kakao.KakaoApiClient;
 import com.team7.termproject.auth.kakao.KakaoUser;
-import com.team7.termproject.auth.kakao.KakaoUserClient;
 import com.team7.termproject.user.ServiceUser;
 import com.team7.termproject.user.UserRepository;
 
@@ -39,7 +39,10 @@ import io.jsonwebtoken.security.Keys;
         "app.jwt.cookie-name=token",
         "app.jwt.issuer=term-proj-api",
         "app.cors.origins=http://localhost:5173",
-        "app.kakao.user-me-url=https://kapi.kakao.com/v2/user/me"
+        "app.kakao.user-me-url=https://kapi.kakao.com/v2/user/me",
+        "app.kakao.token-url=https://kauth.kakao.com/oauth/token",
+        "app.kakao.client-id=test-client-id",
+        "app.kakao.redirect-uri=http://localhost:5173"
 })
 @AutoConfigureMockMvc
 class AuthControllerTest {
@@ -50,14 +53,16 @@ class AuthControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private KakaoUserClient kakaoUserClient;
+    private KakaoApiClient kakaoApiClient;
 
     @MockBean
     private UserRepository userRepository;
 
     @BeforeEach
     void setUp() {
-        when(kakaoUserClient.getUser("valid-kakao-token"))
+        when(kakaoApiClient.getToken("valid-code"))
+                .thenReturn("valid-kakao-token");
+        when(kakaoApiClient.getUser("valid-kakao-token"))
                 .thenReturn(new KakaoUser("123456789"));
         when(userRepository.findOrCreateByKakaoId("123456789"))
                 .thenReturn(new ServiceUser(
@@ -68,12 +73,12 @@ class AuthControllerTest {
     }
 
     @Test
-    void issuesJwtCookieForValidKakaoAccessToken() throws Exception {
+    void issuesJwtCookieForValidKakaoCode() throws Exception {
         MvcResult result = mockMvc.perform(post("/auth/kakao")
                         .header(HttpHeaders.ORIGIN, "http://localhost:5173")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"accessToken":"valid-kakao-token"}
+                                {"code":"valid-code"}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "http://localhost:5173"))
@@ -98,25 +103,24 @@ class AuthControllerTest {
     }
 
     @Test
-    void returnsBadRequestWhenAccessTokenIsMissing() throws Exception {
+    void returnsBadRequestWhenCodeIsMissing() throws Exception {
         mockMvc.perform(post("/auth/kakao")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE))
-                .andExpect(jsonPath("$.error.code").value("ACCESS_TOKEN_REQUIRED"))
-                .andExpect(jsonPath("$.error.message").value("accessToken is required"));
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
     }
 
     @Test
     void returnsUnauthorizedWhenKakaoTokenVerificationFails() throws Exception {
-        when(kakaoUserClient.getUser("bad-token"))
+        when(kakaoApiClient.getToken("bad-code"))
                 .thenThrow(new InvalidKakaoTokenException());
 
         mockMvc.perform(post("/auth/kakao")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"accessToken":"bad-token"}
+                                {"code":"bad-code"}
                                 """))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE))
@@ -132,7 +136,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/auth/kakao")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"accessToken":"valid-kakao-token"}
+                                {"code":"valid-code"}
                                 """))
                 .andExpect(status().isInternalServerError())
                 .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE))
@@ -150,4 +154,3 @@ class AuthControllerTest {
                 .getPayload();
     }
 }
-
