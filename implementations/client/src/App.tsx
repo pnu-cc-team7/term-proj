@@ -155,31 +155,19 @@ function App() {
       return;
     }
     
-    // 모킹 모드인 경우 실제 카카오 호출 없이 바로 로그인 처리
+    // 카카오 SDK가 로드되어 있다면 무조건 실제 로그인을 시도합니다.
+    // (모킹 모드여도 로그인은 실제 백엔드와 연동하기 위함)
+    if (window.Kakao && window.Kakao.Auth) {
+      window.Kakao.Auth.authorize({
+        redirectUri: window.location.origin
+      });
+      return;
+    }
+
+    // 카카오 SDK가 없는 경우에만 모킹 시뮬레이션을 수행합니다.
     if (import.meta.env.VITE_ENABLE_MOCKING === 'true') {
       setIsLoading(true);
-      try {
-        await axios.post('/auth/kakao', { accessToken: 'mock-access-token' });
-        setIsLoggedIn(true);
-      } catch (e) {
-        console.error('Mock login failed', e);
-      } finally {
-        setIsLoading(false);
-      }
-      return;
-    }
-
-    if (!window.Kakao || !window.Kakao.Auth) {
-      alert('카카오 로그인 모듈을 불러오는 중입니다. 잠시만 기다려주세요.');
-      return;
-    }
-
-    // 리다이렉트 방식으로 변경
-    window.Kakao.Auth.authorize({
-      redirectUri: window.location.origin
-    });
-  }
-
+...
   // URL에서 인가 코드 체크 및 로그인 처리
   useEffect(() => {
     const handleAuthCode = async () => {
