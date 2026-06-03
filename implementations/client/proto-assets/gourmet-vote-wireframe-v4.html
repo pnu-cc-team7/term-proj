@@ -1,0 +1,404 @@
+
+<!doctype html>
+<html lang="en">
+<head><script>(function(){
+  function makeStore(){
+    var data = {};
+    var api = {
+      getItem: function(k){ return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : null; },
+      setItem: function(k, v){ data[k] = String(v); },
+      removeItem: function(k){ delete data[k]; },
+      clear: function(){ data = {}; },
+      key: function(i){ return Object.keys(data)[i] || null; }
+    };
+    Object.defineProperty(api, 'length', { get: function(){ return Object.keys(data).length; } });
+    return api;
+  }
+  function tryShim(name){
+    var works = false;
+    try { works = !!window[name] && typeof window[name].getItem === 'function'; void window[name].length; }
+    catch (_) { works = false; }
+    if (works) return;
+    try { Object.defineProperty(window, name, { configurable: true, value: makeStore() }); }
+    catch (_) { try { window[name] = makeStore(); } catch (__) {} }
+  }
+  tryShim('localStorage');
+  tryShim('sessionStorage');
+})();</script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gourmet Vote MVP — Deep Link v4</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Patrick+Hand&family=DM+Serif+Display&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --paper: #fbf6ec;
+      --paper-tint: #f5eedf;
+      --ink: #2b2620;
+      --pencil: #4d473d;
+      --rule: #c8bfa9;
+      --grid: #e3d8b8;
+      --accent: #d8482b;
+      --highlight: #f9d27c;
+      --note-yellow: #fff19a;
+      --note-pink: #ffd5c9;
+      --serif: 'DM Serif Display', 'Iowan Old Style', Georgia, serif;
+      --hand: 'Patrick Hand', 'Caveat', cursive;
+      --hand-bold: 'Caveat', 'Patrick Hand', cursive;
+      --mono: 'IBM Plex Mono', ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle, rgba(43,38,32,0.04) 1px, transparent 1.4px) 0 0 / 22px 22px,
+        var(--paper);
+      font: 16px/1.5 var(--hand);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .page { padding: 32px 48px 56px; max-width: 1200px; margin: 0 auto; position: relative; }
+
+    .head { display: grid; grid-template-columns: auto 1fr auto; gap: 24px; align-items: end; padding-bottom: 14px; border-bottom: 2px solid var(--ink); margin-bottom: 24px; }
+    .head h1 { font: 800 48px/1 var(--serif); margin: 0; display: flex; align-items: center; gap: 18px; }
+    .pin { display: inline-flex; align-items: center; gap: 8px; font: 12px/1 var(--mono); padding: 6px 10px; border: 1.5px dashed var(--accent); color: var(--accent); transform: rotate(-2.2deg); letter-spacing: 0.18em; background: var(--paper); }
+    .pin .x { width: 6px; height: 6px; background: var(--accent); transform: rotate(45deg); }
+    .head .sub { font: 18px/1.4 var(--hand); color: var(--pencil); }
+    
+    .nav-bar {
+      display: flex; gap: 24px; padding: 12px 20px; border: 3px solid var(--ink); border-radius: 999px;
+      background: var(--paper); margin-bottom: 32px; align-items: center; box-shadow: 4px 4px 0 var(--pencil);
+    }
+    .nav-bar .logo { font: 800 24px/1 var(--serif); font-style: italic; border-right: 2px solid var(--grid); padding-right: 20px; }
+    .nav-link { cursor: pointer; position: relative; padding: 4px 8px; font-weight: 500; }
+    .nav-link.active::after {
+      content: ''; position: absolute; left: 0; right: 0; bottom: 2px; height: 10px;
+      background: var(--highlight); opacity: 0.6; z-index: -1; transform: skew(-15deg);
+    }
+
+    .canvas {
+      position: relative;
+      background:
+        repeating-linear-gradient(0deg, var(--grid) 0 1px, transparent 1px 24px),
+        repeating-linear-gradient(90deg, var(--grid) 0 1px, transparent 1px 24px),
+        var(--paper-tint);
+      border: 4px solid var(--ink); border-radius: 12px; padding: 40px; min-height: 600px;
+      box-shadow: 8px 10px 0 rgba(43,38,32,0.1);
+    }
+
+    .sketch-box { border: 2.5px solid var(--pencil); background: var(--paper); padding: 24px; position: relative; }
+    .sketch-btn {
+      display: inline-block; padding: 10px 20px; border: 3px solid var(--ink); background: var(--paper);
+      font: 700 18px var(--hand); cursor: pointer; box-shadow: 4px 4px 0 var(--ink); text-decoration: none; color: var(--ink);
+    }
+    .sketch-btn.primary { background: var(--highlight); }
+    .sketch-input { width: 100%; padding: 12px; border: 2px solid var(--pencil); background: transparent; font: 18px var(--hand); margin-bottom: 16px; outline: none; }
+
+    .sticky { position: absolute; padding: 12px; font: 15px/1.3 var(--hand); box-shadow: 4px 6px 0 -2px rgba(43,38,32,0.15); z-index: 100; width: 180px; }
+    .sticky.yellow { background: var(--note-yellow); }
+    .sticky.pink { background: var(--note-pink); }
+    .sticky .tape { position: absolute; top: -8px; left: 50%; transform: translateX(-50%) rotate(-2deg); width: 60px; height: 16px; background: rgba(43,38,32,0.15); }
+
+    .scribble-text { font-family: var(--hand); font-style: italic; color: var(--pencil); }
+    .fade-in { animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .location-chip { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; background: var(--ink); color: var(--paper); border-radius: 4px; font-size: 14px; margin-bottom: 16px; }
+    
+    .place-option { border: 2px solid var(--pencil); border-radius: 8px; padding: 16px; display: grid; grid-template-columns: 80px 1fr auto; gap: 16px; align-items: center; cursor: pointer; background: var(--paper); transition: 0.1s; margin-bottom: 12px; }
+    .place-option:hover { border-color: var(--ink); transform: scale(1.01); }
+    .place-thumb { width: 80px; height: 80px; border: 1.5px solid var(--grid); background: var(--paper-tint); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .place-info h4 { margin: 0 0 4px; font: 700 20px var(--hand); }
+    .place-meta { font-size: 14px; color: var(--pencil); }
+    
+    .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .bar-container { flex: 1; height: 28px; border: 2px solid var(--ink); position: relative; background: var(--paper); overflow: hidden; }
+    .bar-fill { height: 100%; background: repeating-linear-gradient(45deg, var(--pencil) 0 2px, transparent 2px 8px); border-right: 2px solid var(--ink); }
+
+    .route-tip { position: fixed; bottom: 20px; left: 20px; background: var(--ink); color: white; padding: 8px 16px; font-size: 12px; font-family: var(--mono); border-radius: 4px; z-index: 1000; opacity: 0.8; }
+
+    @media (max-width: 800px) {
+      .page { padding: 16px; } .canvas { padding: 20px; }
+      .sticky { position: relative; top: 0 !important; right: 0 !important; margin: 20px auto; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const Sticky = ({ children, color = 'yellow', style }) => (
+      <div className={`sticky ${color}`} style={style}>
+        <div className="tape"></div>
+        {children}
+      </div>
+    );
+
+    const PlaceOption = ({ emoji, name, address, distance, rating, checked, onSelect }) => (
+      <div className="place-option" onClick={onSelect} style={checked ? { borderColor: 'var(--accent)', borderWidth: '3px' } : {}}>
+        <div className="place-thumb">{emoji}</div>
+        <div className="place-info">
+          <h4>{name}</h4>
+          <div className="place-meta">{address} • {distance}m away</div>
+          <div className="scribble-text">Rating: {rating} ★</div>
+        </div>
+        <input type="radio" checked={checked} readOnly style={{ width: '24px', height: '24px' }} />
+      </div>
+    );
+
+    const App = () => {
+      // Routing Logic
+      const getScreenFromHash = () => {
+        const hash = window.location.hash.replace('#', '');
+        const validHashes = {
+          'home': 'entry',
+          'create': 'create',
+          'explore': 'detail',
+          'result': 'result',
+          'activity': 'history'
+        };
+        return validHashes[hash] || 'entry';
+      };
+
+      const [screen, setScreen] = useState(getScreenFromHash());
+      const [location, setLocation] = useState('Gangnam, Seoul');
+
+      useEffect(() => {
+        const handleHashChange = () => setScreen(getScreenFromHash());
+        window.addEventListener('hashchange', handleHashChange);
+        return () => window.removeEventListener('hashchange', handleHashChange);
+      }, []);
+
+      const navTo = (s) => {
+        const hashMapping = {
+          'entry': 'home',
+          'create': 'create',
+          'detail': 'explore',
+          'result': 'result',
+          'history': 'activity'
+        };
+        window.location.hash = hashMapping[s] || 'home';
+      };
+
+      const Nav = () => (
+        <div className="nav-bar">
+          <div className="logo" onClick={() => navTo('entry')} style={{cursor:'pointer'}}>Gourmet Social</div>
+          <div className={`nav-link ${screen === 'entry' ? 'active' : ''}`} onClick={() => navTo('entry')}>Home</div>
+          <div className={`nav-link ${screen === 'create' ? 'active' : ''}`} onClick={() => navTo('create')}>New Vote</div>
+          <div className={`nav-link ${screen === 'detail' || screen === 'result' ? 'active' : ''}`} onClick={() => navTo('detail')}>Explore Places</div>
+          <div className={`nav-link ${screen === 'history' ? 'active' : ''}`} onClick={() => navTo('history')}>Activity</div>
+        </div>
+      );
+
+      return (
+        <div className="page">
+          <div className="head">
+            <h1><em>Gourmet · Social</em> <span className="pin"><span className="x"></span>DEEP-LINK v4</span></h1>
+            <div className="sub">Location-Based Restaurant Decision MVP</div>
+            <div className="meta"><b>STATUS</b> RESTORED V2 + HASH · <b>DEEP LINK</b> READY</div>
+          </div>
+
+          <Nav />
+
+          <div className="canvas">
+            {screen === 'entry' && <ScreenEntry onNext={() => navTo('create')} location={location} />}
+            {screen === 'create' && <ScreenCreate onNext={() => navTo('detail')} location={location} />}
+            {screen === 'detail' && <ScreenDetail onNext={() => navTo('result')} location={location} />}
+            {screen === 'result' && <ScreenResult onNext={() => navTo('history')} location={location} />}
+            {screen === 'history' && <ScreenHistory onRestart={() => navTo('entry')} />}
+          </div>
+
+          <div className="route-tip">
+            URL: #{window.location.hash.replace('#', '') || 'home'}
+          </div>
+        </div>
+      );
+    };
+
+    const ScreenEntry = ({ onNext, location }) => (
+      <div className="fade-in">
+        <div style={{ textAlign: 'center', marginTop: '40px' }}>
+          <div style={{ fontSize: '80px', marginBottom: '10px' }}>📍</div>
+          <h2 style={{ font: '800 48px var(--serif)', margin: '0 0 10px' }}>Nearby Gourmet Votes</h2>
+          <div className="location-chip">
+            <span>Current: <b>{location}</b></span>
+            <span style={{ cursor: 'pointer', textDecoration: 'underline', opacity: 0.7 }}>Change</span>
+          </div>
+          <div className="sketch-box" style={{ maxWidth: '500px', margin: '30px auto' }}>
+            <p className="scribble-text" style={{ fontSize: '20px' }}>What's the best "Tonkatsu" near here?</p>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+              <div className="sketch-btn primary" style={{ flex: 1 }} onClick={onNext}>Join Active Votes</div>
+              <div className="sketch-btn" style={{ flex: 1 }} onClick={onNext}>Create New</div>
+            </div>
+          </div>
+        </div>
+        <Sticky style={{ top: '20px', right: '20px' }}>
+          <b>Entry:</b><br/>Autodetects location.<br/>Focuses on "What's good here?"
+        </Sticky>
+      </div>
+    );
+
+    const ScreenCreate = ({ onNext, location }) => (
+      <div className="fade-in">
+        <h2 style={{ font: '800 32px var(--serif)', marginBottom: '24px' }}>New Restaurant Vote</h2>
+        <div className="location-chip">📍 Near {location}</div>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '32px' }}>
+          <div className="sketch-box">
+            <label style={{ display: 'block', fontWeight: 'bold', fontSize: '18px', marginBottom: '8px' }}>Vote Topic</label>
+            <input className="sketch-input" placeholder="e.g. Best Pizza for Friday Night" />
+
+            <label style={{ display: 'block', fontWeight: 'bold', fontSize: '18px', marginBottom: '12px' }}>Select Restaurants</label>
+            <div className="sketch-input" style={{ display: 'flex', gap: '10px', alignItems: 'center', background: '#fff' }}>
+              🔍 Search by place name or category...
+            </div>
+            
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
+              <div style={{ padding: '4px 12px', border: '1.5px solid var(--ink)', borderRadius: '20px', fontSize: '14px' }}>🍕 Pizza Heaven (Selected) ✕</div>
+              <div style={{ padding: '4px 12px', border: '1.5px solid var(--ink)', borderRadius: '20px', fontSize: '14px' }}>🍝 Pasta Bar (Selected) ✕</div>
+            </div>
+
+            <div className="sketch-btn primary" onClick={onNext}>Publish to Neighbors</div>
+          </div>
+          
+          <div style={{ border: '2px solid var(--pencil)', background: 'white', padding: '16px', position: 'relative' }}>
+            <div className="scribble-text" style={{ textAlign: 'center', padding: '40px 0' }}>
+              [Sketch: Map View with Pins]<br/>Select places from the map to add to vote.
+            </div>
+            <div style={{ position: 'absolute', top: '10px', right: '10px', padding: '4px 8px', border: '1px solid var(--grid)', fontSize: '12px' }}>500m radius</div>
+          </div>
+        </div>
+        <Sticky style={{ bottom: '40px', right: '40px' }} color="pink">
+          <b>Creation:</b><br/>Restaurants are picked from map/search API, not just text.
+        </Sticky>
+      </div>
+    );
+
+    const ScreenDetail = ({ onNext, location }) => {
+      const [selected, setSelected] = useState(0);
+      return (
+        <div className="fade-in">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h2 style={{ font: '800 36px var(--serif)', margin: 0 }}>Friday Night Pizza?</h2>
+              <div className="scribble-text">Started by @neighbor_tom • 18 people voting</div>
+            </div>
+            <div className="location-chip">📍 200m from you</div>
+          </div>
+
+          <div style={{ marginTop: '32px', maxWidth: '800px' }}>
+            <PlaceOption 
+              emoji="🍕" name="Pizza Heaven" address="123 Gangnam-daero" 
+              distance="150" rating="4.8" checked={selected === 0} onSelect={() => setSelected(0)} 
+            />
+            <PlaceOption 
+              emoji="🍝" name="Pasta Bar" address="45 Teheran-ro" 
+              distance="320" rating="4.2" checked={selected === 1} onSelect={() => setSelected(1)} 
+            />
+            <PlaceOption 
+              emoji="🍔" name="Burger Joint" address="88 Yeoksam-ro" 
+              distance="500" rating="4.5" checked={selected === 2} onSelect={() => setSelected(2)} 
+            />
+            
+            <div style={{ marginTop: '40px' }}>
+              <div className="sketch-btn primary" style={{ width: '100%', textAlign: 'center' }} onClick={onNext}>Cast My Vote</div>
+            </div>
+          </div>
+          <Sticky style={{ top: '120px', right: '20px' }}>
+            <b>Voting:</b><br/>Options show address, distance, and rating to help decide.
+          </Sticky>
+        </div>
+      );
+    };
+
+    const ScreenResult = ({ onNext, location }) => (
+      <div className="fade-in">
+        <h2 style={{ font: '800 32px var(--serif)', marginBottom: '32px' }}>Current Winner in {location}</h2>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '32px' }}>
+          <div className="sketch-box">
+            <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '32px' }}>
+              <div className="place-thumb" style={{ width: '120px', height: '120px', fontSize: '60px', background: 'var(--highlight)' }}>🍕</div>
+              <div>
+                <h3 style={{ margin: 0, font: '700 28px var(--hand)' }}>Pizza Heaven</h3>
+                <div className="scribble-text" style={{ fontSize: '18px' }}>Leading with 42 votes (65%)</div>
+              </div>
+            </div>
+
+            <div className="bar-row">
+              <div style={{ width: '100px' }}>Pizza Heaven</div>
+              <div className="bar-container"><div className="bar-fill" style={{ width: '65%' }}></div></div>
+              <div style={{ width: '50px', textAlign: 'right' }}>65%</div>
+            </div>
+            <div className="bar-row">
+              <div style={{ width: '100px' }}>Pasta Bar</div>
+              <div className="bar-container"><div className="bar-fill" style={{ width: '25%' }}></div></div>
+              <div style={{ width: '50px', textAlign: 'right' }}>25%</div>
+            </div>
+
+            <div style={{ marginTop: '32px', display: 'flex', gap: '16px' }}>
+              <div className="sketch-btn primary">Go to Map</div>
+              <div className="sketch-btn" onClick={onNext}>View My Activity</div>
+            </div>
+          </div>
+
+          <div className="scribble-text" style={{ padding: '20px', border: '2px dashed var(--pencil)', background: 'var(--paper)' }}>
+            <h4>People's Choice Why:</h4>
+            <p>"The crust is amazing!" - @foodie</p>
+            <p>"Best value near the station." - @kim</p>
+          </div>
+        </div>
+        <Sticky style={{ top: '60px', right: '40px' }} color="pink">
+          <b>Results:</b><br/>Emphasizes the "Winning Place" with a map link.
+        </Sticky>
+      </div>
+    );
+
+    const ScreenHistory = ({ onRestart }) => (
+      <div className="fade-in">
+        <h2 style={{ font: '800 32px var(--serif)', marginBottom: '32px' }}>My Activity</h2>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '32px' }}>
+          <div className="sketch-box" style={{ textAlign: 'center' }}>
+            <div className="scribble-text">PLACES DISCOVERED</div>
+            <div style={{ fontSize: '48px', fontWeight: '800' }}>24</div>
+          </div>
+          <div className="sketch-box" style={{ textAlign: 'center' }}>
+            <div className="scribble-text">VOTES JOINED</div>
+            <div style={{ fontSize: '48px', fontWeight: '800' }}>12</div>
+          </div>
+          <div className="sketch-box" style={{ textAlign: 'center' }}>
+            <div className="scribble-text">LOCAL RANK</div>
+            <div style={{ fontSize: '48px', fontWeight: '800' }}>#4</div>
+          </div>
+        </div>
+
+        <div className="sketch-box">
+          <h3 style={{ font: '700 18px var(--mono)', marginBottom: '16px' }}>RECENTLY VISITED</h3>
+          <div style={{ borderBottom: '1px dashed var(--grid)', padding: '12px 0', display: 'flex', justifyContent: 'space-between' }}>
+            <div><b>Pizza Heaven</b> <br/><span className="scribble-text">Voted in "Friday Night Pizza"</span></div>
+            <div className="scribble-text">Gangnam</div>
+          </div>
+          <div style={{ borderBottom: '1px dashed var(--grid)', padding: '12px 0', display: 'flex', justifyContent: 'space-between' }}>
+            <div><b>Sushi Zen</b> <br/><span className="scribble-text">Voted in "Quick Lunch"</span></div>
+            <div className="scribble-text">Sinsa</div>
+          </div>
+          <div style={{ marginTop: '32px', textAlign: 'center' }}>
+            <div className="sketch-btn" onClick={onRestart}>Start New Search</div>
+          </div>
+        </div>
+      </div>
+    );
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
