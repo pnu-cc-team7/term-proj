@@ -28,5 +28,14 @@
 - `SPRING_DATASOURCE_URL`: SQL 연결 문자열
 - `AZURE_STATIC_WEB_APPS_API_TOKEN`: 프론트엔드 배포 토큰
 
+## 5. 🧪 스테이징 환경 (Staging Environment - Oracle Cloud)
+Azure 프로덕션 환경의 무료 티어(F1) 한도 초과를 방지하고, 빠른 통합 테스트를 진행하기 위해 Oracle Cloud 인스턴스에 스테이징 환경이 별도로 구축되어 있습니다.
+
+- **Domain**: [http://pnu-team7-stage.duckdns.org](http://pnu-team7-stage.duckdns.org)
+- **Infra**: Oracle Cloud Instance (Ubuntu)
+- **실행 환경**: Node.js PM2를 통한 백엔드 관리 및 Nginx/직접 서빙(스크립트 내장)
+- **배포 방식**: 서버 내부의 `~/term-proj-staging/deploy-staging.sh` 스크립트를 실행하여 수동 배포 (`main` 브랜치 Pull 및 빌드)
+- **목적**: Azure 배포 전 실제 서버 환경에서의 카카오 로그인 리다이렉트, 지도 SDK 연동 등 핵심 기능 사전 검증
+
 ---
-*Last Updated: 2026-06-03 (Updated with SQL DB & Region info)*
+*Last Updated: 2026-06-04 (Updated with Staging Environment info)*
