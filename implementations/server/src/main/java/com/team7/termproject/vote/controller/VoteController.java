@@ -1,5 +1,6 @@
 package com.team7.termproject.vote.controller;
 
+import com.team7.termproject.auth.JwtTokenProvider;
 import com.team7.termproject.vote.dto.VoteCreateRequest;
 import com.team7.termproject.vote.dto.VoteParticipateRequest;
 import com.team7.termproject.vote.dto.VoteResponse;
@@ -13,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import java.net.URI;
 
 @RestController
 @RequiredArgsConstructor
@@ -21,6 +21,7 @@ import java.net.URI;
 public class VoteController {
 
     private final VoteService voteService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @PostMapping
     public ResponseEntity<Void> createVote(
@@ -35,9 +36,10 @@ public class VoteController {
     @PostMapping("/{id}/participate")
     public ResponseEntity<Void> participate(
             @PathVariable Long id,
-            @Valid @RequestBody VoteParticipateRequest request
+            @Valid @RequestBody VoteParticipateRequest request,
+            @CookieValue(name = "token") String token
     ) {
-        String userKakaoId = "test-user"; // TODO: Cookie JWT에서 kakaoId 추출하도록 변경
+        String userKakaoId = jwtTokenProvider.getKakaoId(token);;
 
         voteService.participate(id, request, userKakaoId);
 
@@ -53,4 +55,5 @@ public class VoteController {
     public ResponseEntity<VoteResultResponse> getResult(@PathVariable Long id) {
         return ResponseEntity.ok(voteService.getResult(id));
     }
+
 }
