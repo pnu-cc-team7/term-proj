@@ -167,7 +167,17 @@ function App() {
     // 카카오 SDK가 없는 경우에만 모킹 시뮬레이션을 수행합니다.
     if (import.meta.env.VITE_ENABLE_MOCKING === 'true') {
       setIsLoading(true);
-...
+      try {
+        await axios.post('/auth/kakao', { accessToken: 'mock-access-token' });
+        setIsLoggedIn(true);
+      } catch (e) {
+        console.error('Mock login failed', e);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+  }
   // URL에서 인가 코드 체크 및 로그인 처리
   useEffect(() => {
     const handleAuthCode = async () => {
