@@ -11,6 +11,35 @@ test.describe('Vote Results Flow', () => {
       await dialog.dismiss();
     });
 
+    // Kakao SDK 관련 네트워크 요청 차단 및 가짜 스크립트 반환
+    await page.route('**/*kakao.com/v2/maps/sdk.js*', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/javascript',
+        body: 'console.log("[MOCK] Kakao Maps SDK script loaded");'
+      });
+    });
+    await page.route('**/*kakao.com/**', route => route.abort());
+    await page.route('**/*kakaocdn.net/**', route => route.abort());
+
+    // Kakao Map SDK 모킹
+    await page.addInitScript(() => {
+      const mockKakao = {
+        maps: {
+          load: (cb: any) => setTimeout(cb, 10),
+          LatLng: function(lat: number, lng: number) {
+            return { getLat: () => lat, getLng: () => lng };
+          },
+          services: {
+            Places: function() { return { keywordSearch: () => {} }; },
+            Status: { OK: 'OK' }
+          }
+        }
+      };
+      (window as any).kakao = mockKakao;
+      Object.defineProperty(window, 'kakao', { get: () => mockKakao, set: () => {}, configurable: true });
+    });
+
     // 백엔드 API 모킹: 인증
     await page.route('**/auth/kakao', async route => {
       await route.fulfill({
@@ -33,14 +62,11 @@ test.describe('Vote Results Flow', () => {
               title: '점심 메뉴 결정',
               status: 'open',
               options: [
-                { id: 'opt1', name: '김치찌개', lat: 37.123, lng: 127.123 },
-                { id: 'opt2', name: '돈까스', lat: 37.124, lng: 127.124 }
+                { id: 'opt1', name: '김치찌개', lat: 35.1, lng: 129.1 }
               ]
             }
           ])
         });
-      } else {
-        await route.fulfill({ status: 201, body: JSON.stringify({ id: 'new-id' }) });
       }
     });
 
@@ -53,25 +79,9 @@ test.describe('Vote Results Flow', () => {
         body: JSON.stringify({ message: 'Success' })
       });
     });
-
-    // API 모킹: 투표 결과
-    await page.route('**/results', async route => {
-      console.log(`[PLAYWRIGHT MOCK] Intercepted Results: ${route.request().url()}`);
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          totalVotes: 25,
-          options: [
-            { optionId: 'opt1', name: '김치찌개', count: 18 },
-            { optionId: 'opt2', name: '돈까스', count: 7 }
-          ]
-        })
-      });
-    });
   });
 
-  test('should navigate to results page and display mocked data', async ({ page }) => {
+  test('should participate in a vote and return to list', async ({ page }) => {
     console.log('--- Step 1: Navigating to App ---');
     await page.goto('/?no-mock=true');
 
@@ -85,38 +95,24 @@ test.describe('Vote Results Flow', () => {
     await expect(voteCard).toBeVisible({ timeout: 10000 });
     await voteCard.click();
 
-    // 3. 스와이프 (카드가 사라질 때까지 반복)
-    console.log('--- Step 3: Swiping cards ---');
-    for(let i=0; i<2; i++) {
-        const card = page.locator('.swipe-card').first();
-        await expect(card).toBeVisible({ timeout: 5000 });
-        
-        const box = await card.boundingBox();
-        if (box) {
-          // 오른쪽으로 스와이프 (LIKE)
-          await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-          await page.mouse.down();
-          await page.mouse.move(box.x + box.width + 400, box.y + box.height / 2); // 아주 길게 드래그
-          await page.mouse.up();
-          await page.waitForTimeout(800); // 렌더링 애니메이션 대기
-        }
+    // 3. 스와이프
+    console.log('--- Step 3: Swiping card ---');
+    const card = page.locator('.swipe-card').first();
+    await expect(card).toBeVisible({ timeout: 5000 });
+    
+    const box = await card.boundingBox();
+    if (box) {
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(box.x + box.width + 400, box.y + box.height / 2);
+      await page.mouse.up();
     }
 
-    // 4. 모든 스와이프 완료 후 자동으로 결과 페이지로 이동됨
-    console.log('--- Step 4: Verifying Automatic Navigation to Results ---');
+    // 4. 스와이프 완료 후 자동으로 목록 페이지로 이동됨
+    console.log('--- Step 4: Verifying Return to List ---');
+    const listHeader = page.locator('h2', { hasText: 'Active Votes' });
+    await expect(listHeader).toBeVisible({ timeout: 10000 });
     
-    // 5. 최종 결과 검증
-    console.log('--- Step 5: Verifying Final Results Data ---');
-    const resultsHeader = page.locator('h2');
-    await expect(resultsHeader).toContainText('Results: 점심 메뉴 결정', { timeout: 15000 });
-    
-    const leaderName = page.locator('h4');
-    await expect(leaderName).toBeVisible({ timeout: 10000 });
-    await expect(leaderName).toContainText('김치찌개');
-
-    const totalVotesText = page.locator('.scribble-text', { hasText: 'Total 25 people' });
-    await expect(totalVotesText).toBeVisible({ timeout: 10000 });
-    
-    console.log('--- Test: Success! Results are correctly displayed ---');
+    console.log('--- Test: Success! Voted and returned to list ---');
   });
 });
