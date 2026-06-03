@@ -21,7 +21,6 @@ export const KakaoMap: React.FC<KakaoMapProps> = ({ lat, lng, name }) => {
     const apiKey = import.meta.env.VITE_KAKAO_MAP_KEY;
 
     const initMap = () => {
-      console.log('--- Kakao Map: Initializing ---');
       if (window.kakao && window.kakao.maps) {
         window.kakao.maps.load(() => {
           if (!container.current) return;
@@ -41,7 +40,6 @@ export const KakaoMap: React.FC<KakaoMapProps> = ({ lat, lng, name }) => {
             });
             infowindow.open(map, marker);
             setMapStatus('ready');
-            console.log('--- Kakao Map: Rendered! ---');
           } catch (e) {
             console.error('--- Kakao Map: Render Error ---', e);
             setMapStatus('error');
@@ -53,10 +51,6 @@ export const KakaoMap: React.FC<KakaoMapProps> = ({ lat, lng, name }) => {
     let script = document.getElementById(scriptId) as HTMLScriptElement;
 
     if (!script) {
-      console.log('--- Kakao Map: Creating Script ---');
-      console.log('Key:', apiKey ? 'exists' : 'MISSING');
-      console.log('Domain:', window.location.origin);
-
       if (!apiKey) {
         setMapStatus('error');
         return;
@@ -73,7 +67,6 @@ export const KakaoMap: React.FC<KakaoMapProps> = ({ lat, lng, name }) => {
       };
       document.head.appendChild(script);
     } else {
-      console.log('--- Kakao Map: Script already in DOM ---');
       if (window.kakao && window.kakao.maps) {
         initMap();
       } else {
