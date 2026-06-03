@@ -188,9 +188,10 @@ function App() {
         setIsLoading(true);
         try {
           console.log('Received Kakao Auth Code, requesting token...');
-          // 백엔드 인증 요청 (이제 인가 코드를 보냅니다)
+          // 백엔드 인증 요청 (인가 코드를 보내고 JWT 쿠키를 받습니다)
           await axios.post('/auth/kakao', { code });
           setIsLoggedIn(true);
+          console.log('Login successful via Kakao Redirect');
         } catch (e) {
           console.error('Auth processing failed', e);
           alert('로그인 처리 중 오류가 발생했습니다.');
