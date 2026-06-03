@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'specs/api/openapi.yaml'
+      - 'specs/api/final_openapi.yaml'
   workflow_dispatch:
 
 # 🔐 권한 명시 추가 (쓰기 권한 필요)
