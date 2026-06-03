@@ -1,6 +1,6 @@
 # 🎯 MVP 기능 최종 확정 리스트 (6/7 마감용)
 
-**기준 문서**: `final_openapi.yaml` (v2.1.0)
+**기준 문서**: `final_openapi.yaml` (v2.1.2)
 **상태**: **[Frozen]** - 추가 기능 구현 절대 불가
 
 ## 1. 핵심 MVP 기능 (In-Scope)

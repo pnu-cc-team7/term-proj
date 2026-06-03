@@ -42,9 +42,10 @@ Azure App Service는 환경 변수(`PORT`)를 통해 수신 포트를 지정합�
 ## 🔐 핵심 로직 구현 지침 (카카오 로그인 검증)
 
 언어와 상관없이 다음 프로세스를 준수해야 합니다:
-1. **Token Verification**: FE에서 전달받은 `accessToken`을 카카오 API(`v2/user/me`)로 전송하여 사용자 정보 검증.
-2. **Session Management**: 우리 서비스만의 JWT를 발급하여 **Http-Only Cookie**로 클라이언트에 전달.
-3. **Security**: 쿠키 설정 시 `Secure`, `SameSite=None` 옵션을 필수 적용 (CORS 및 HTTPS 대응).
+1. **Token Exchange**: FE에서 전달받은 `code`(인가 코드)를 카카오 토큰 API로 전송하여 `accessToken`을 획득.
+2. **User Verification**: 획득한 토큰으로 카카오 API(`v2/user/me`)를 호출하여 사용자 정보 확인.
+3. **Session Management**: 우리 서비스만의 JWT를 발급하여 **Http-Only Cookie**로 클라이언트에 전달.
+4. **Security**: 쿠키 설정 시 `Secure`, `SameSite=None` 옵션을 필수 적용 (CORS 및 HTTPS 대응).
 
 ---
 
