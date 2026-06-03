@@ -38,16 +38,6 @@ export const handlers = [
     return HttpResponse.json(voteWithId, { status: 201 })
   }),
 
-  // 2. 카카오 로그인 모킹
-  http.post('/auth/kakao', () => {
-    return new HttpResponse(null, {
-      status: 200,
-      headers: {
-        'Set-Cookie': 'token=mocked-jwt-token; HttpOnly; Path=/;'
-      }
-    })
-  }),
-
   // 3. 투표 결과 조회 모킹
   http.get('/votes/:id/results', () => {
     return HttpResponse.json({

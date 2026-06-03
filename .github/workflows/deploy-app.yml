@@ -38,7 +38,8 @@ jobs:
         working-directory: implementations/client
         env:
           VITE_KAKAO_MAP_KEY: ${{ secrets.VITE_KAKAO_MAP_KEY }}
-          VITE_ENABLE_MOCKING: "true" # 원격 환경에서도 데모를 위해 모킹 활성화
+          VITE_ENABLE_MOCKING: "true"
+          VITE_API_BASE_URL: "https://app-term-proj-team7-server.azurewebsites.net"
 
       - name: Deploy to Azure Static Web Apps 🚀
         uses: Azure/static-web-apps-deploy@v1
