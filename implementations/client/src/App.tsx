@@ -84,7 +84,7 @@ function App() {
 
   // MSW로부터 모킹된 데이터 패칭
   const fetchVotes = async () => {
-    if (!axios.defaults.baseURL) return; // baseURL 설정 대기
+    if (axios.defaults.baseURL === undefined) return; // baseURL 설정 대기
     
     setIsLoading(true)
     try {
