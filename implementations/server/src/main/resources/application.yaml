@@ -1,15 +1,12 @@
-server:
-  port: ${PORT:8080}
-
 spring:
   application:
     name: termproject
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:votingdb}
-    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
-    username: ${SPRING_DATASOURCE_USERNAME:sa}
-    password: ${SPRING_DATASOURCE_PASSWORD:}
+    url: jdbc:h2:mem:votingdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
 
   h2:
     console:
@@ -23,18 +20,3 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        dialect: ${HIBERNATE_DIALECT:org.hibernate.dialect.H2Dialect}
-
-app:
-  cors:
-    origins: ${CORS_ORIGINS:http://localhost:5173}
-  jwt:
-    secret: ${JWT_SECRET}
-    expires-in-seconds: ${JWT_EXPIRES_IN_SECONDS:604800}
-    cookie-name: ${JWT_COOKIE_NAME:token}
-    issuer: ${JWT_ISSUER:term-proj-api}
-  kakao:
-    user-me-url: ${KAKAO_USER_ME_URL:https://kapi.kakao.com/v2/user/me}
-    token-url: ${KAKAO_TOKEN_URL:https://kauth.kakao.com/oauth/token}
-    client-id: ${KAKAO_CLIENT_ID:72d5e24a5f1cc81b3a7f78ca849929e5}
-    redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:5173}
