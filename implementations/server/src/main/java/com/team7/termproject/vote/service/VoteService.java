@@ -3,6 +3,9 @@ package com.team7.termproject.vote.service;
 import com.team7.termproject.common.ApiException;
 import com.team7.termproject.vote.dto.VoteCreateRequest;
 import com.team7.termproject.vote.dto.VoteParticipateRequest;
+import com.team7.termproject.vote.dto.VoteResponse;
+import com.team7.termproject.vote.dto.VoteResultResponse;
+import com.team7.termproject.vote.dto.VoteResultOptionResponse;
 import com.team7.termproject.vote.entity.Participation;
 import com.team7.termproject.vote.entity.Vote;
 import com.team7.termproject.vote.entity.VoteOption;
@@ -13,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +55,8 @@ public class VoteService {
                         "Vote not found"
                 ));
 
-        VoteOption option = voteOptionRepository.findById(request.getOptionId())
+        Long optionId = Long.parseLong(request.getOptionId());
+        VoteOption option = voteOptionRepository.findById(optionId)
                 .orElseThrow(() -> new ApiException(
                         HttpStatus.NOT_FOUND,
                         "OPTION_NOT_FOUND",
@@ -75,5 +81,38 @@ public class VoteService {
 
         Participation participation = new Participation(userKakaoId, vote, option);
         participationRepository.save(participation);
+    }
+
+    @Transactional(readOnly = true)
+    public List<VoteResponse> getVotes() {
+        return voteRepository.findAll()
+                .stream()
+                .map(VoteResponse::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public VoteResultResponse getResult(Long voteId) {
+        Vote vote = voteRepository.findById(voteId)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "VOTE_NOT_FOUND",
+                        "Vote not found"
+                ));
+
+        List<VoteResultOptionResponse> options = vote.getOptions()
+                .stream()
+                .map(option -> new VoteResultOptionResponse(
+                        option.getId(),
+                        option.getName(),
+                        participationRepository.countByOptionId(option.getId())
+                ))
+                .toList();
+
+        long totalVotes = options.stream()
+                .mapToLong(VoteResultOptionResponse::getCount)
+                .sum();
+
+        return new VoteResultResponse(totalVotes, options);
     }
 }

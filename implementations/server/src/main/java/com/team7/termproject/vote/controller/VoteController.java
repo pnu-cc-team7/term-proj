@@ -2,12 +2,16 @@ package com.team7.termproject.vote.controller;
 
 import com.team7.termproject.vote.dto.VoteCreateRequest;
 import com.team7.termproject.vote.dto.VoteParticipateRequest;
+import com.team7.termproject.vote.dto.VoteResponse;
+import com.team7.termproject.vote.dto.VoteResultResponse;
 import com.team7.termproject.vote.service.VoteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 import java.net.URI;
 
@@ -38,5 +42,15 @@ public class VoteController {
         voteService.participate(id, request, userKakaoId);
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping
+    public ResponseEntity<List<VoteResponse>> getVotes() {
+        return ResponseEntity.ok(voteService.getVotes());
+    }
+
+    @GetMapping("/{id}/results")
+    public ResponseEntity<VoteResultResponse> getResult(@PathVariable Long id) {
+        return ResponseEntity.ok(voteService.getResult(id));
     }
 }

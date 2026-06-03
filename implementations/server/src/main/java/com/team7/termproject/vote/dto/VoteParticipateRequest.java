@@ -6,5 +6,5 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class VoteParticipateRequest {
-    private Long optionId;
+    private String optionId;
 }
