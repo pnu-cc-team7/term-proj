@@ -40,4 +40,11 @@ make api-gen  # 실행 후 1번 선택
 상세한 인프라 구성 및 접속 정보는 [docs/INFRA.md](./docs/INFRA.md)를 참고하세요.
 
 ---
+
+## 📈 프로젝트 상태 및 기록
+
+- **[변경 이력 (Changelog)](./CHANGELOG.md)**: 전체 마일스톤 및 릴리즈 노트 📝
+- **[로컬 검증 가이드](./docs/Local-Verification-Guide.md)**: 배포 전 필수 확인 절차 🧪
+
+---
 *Created by Team 7 Master Orchestrator*
