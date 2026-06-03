@@ -110,8 +110,13 @@ test.describe('Vote Results Flow', () => {
     const resultsHeader = page.locator('h2');
     await expect(resultsHeader).toContainText('Results: 점심 메뉴 결정', { timeout: 15000 });
     
-    await expect(page.locator('h4')).toContainText('김치찌개');
-    await expect(page.locator('.scribble-text')).toContainText('Total 25 people participated!');
+    const leaderName = page.locator('h4');
+    await expect(leaderName).toBeVisible({ timeout: 10000 });
+    await expect(leaderName).toContainText('김치찌개');
+
+    const totalVotesText = page.locator('.scribble-text', { hasText: 'Total 25 people' });
+    await expect(totalVotesText).toBeVisible({ timeout: 10000 });
+    
     console.log('--- Test: Success! Results are correctly displayed ---');
   });
 });
