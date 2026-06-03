@@ -63,6 +63,7 @@ jobs:
         run: npm run test:e2e
         working-directory: implementations/client
         env:
+          VITE_KAKAO_MAP_KEY: ${{ secrets.VITE_KAKAO_MAP_KEY }}
           VITE_ENABLE_MOCKING: "true"
 
   # --- 2. 프론트엔드 배포 (CD) ---
