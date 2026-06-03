@@ -39,15 +39,15 @@ test.describe('Authentication Flow', () => {
     await expect(page).toHaveTitle(/Gourmet Social/);
 
     // 3. 로그아웃 버튼이 나타날 때까지 대기
-    console.log('--- Test: Waiting for LOGOUT button ---');
-    const logoutButton = page.getByRole('button', { name: 'LOGOUT' });
+    console.log('--- Test: Waiting for Logout button ---');
+    const logoutButton = page.getByRole('button', { name: 'Logout' });
     await expect(logoutButton).toBeVisible({ timeout: 15000 });
-    console.log('--- Test: Success! LOGOUT button is visible ---');
+    console.log('--- Test: Success! Logout button is visible ---');
   });
 
   test('should show kakao login button by default', async ({ page }) => {
     await page.goto('/');
-    const loginButton = page.getByRole('button', { name: 'KAKAO LOGIN' });
+    const loginButton = page.getByRole('button', { name: 'Kakao Login' });
     await expect(loginButton).toBeVisible();
   });
 });

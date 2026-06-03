@@ -5,15 +5,34 @@ test.describe('Vote Creation Flow', () => {
     // 브라우저 콘솔 로그 출력
     page.on('console', msg => console.log(`[BROWSER] ${msg.type()}: ${msg.text()}`));
 
+    // Kakao SDK 관련 네트워크 요청 차단 및 가짜 스크립트 반환
+    await page.route('**/*kakao.com/v2/maps/sdk.js*', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/javascript',
+        body: 'console.log("[MOCK] Kakao Maps SDK script loaded");'
+      });
+    });
+
+    await page.route('**/*kakao.com/**', route => route.abort());
+    await page.route('**/*kakaocdn.net/**', route => route.abort());
+
     // Kakao Map SDK 모킹 (장소 검색 시뮬레이션)
     await page.addInitScript(() => {
-      (window as any).kakao = {
+      const mockKakao = {
         maps: {
+          load: (cb: any) => {
+            console.log('[MOCK SDK] maps.load called');
+            setTimeout(cb, 10);
+          },
+          LatLng: function(lat: number, lng: number) {
+            return { getLat: () => lat, getLng: () => lng };
+          },
           services: {
             Places: function() {
               return {
                 keywordSearch: (keyword: string, callback: any) => {
-                  console.log(`[MOCK SDK] Searching for: ${keyword}`);
+                  console.log(`[MOCK SDK] keywordSearch called for: ${keyword}`);
                   const mockData = [
                     { id: '1', place_name: '맛있는 피자집', address_name: '서울시 강남구', x: '127.1', y: '37.1' },
                     { id: '2', place_name: '매콤한 떡볶이', address_name: '서울시 서초구', x: '127.2', y: '37.2' }
@@ -26,6 +45,14 @@ test.describe('Vote Creation Flow', () => {
           }
         }
       };
+      (window as any).kakao = mockKakao;
+      
+      // 진짜 SDK가 전역 변수를 덮어쓰지 못하도록 고정
+      Object.defineProperty(window, 'kakao', {
+        get: () => mockKakao,
+        set: () => { console.log('[MOCK] Attempt to overwrite window.kakao ignored'); },
+        configurable: true
+      });
     });
 
     // API 모킹: 투표 (GET/POST)
@@ -47,18 +74,18 @@ test.describe('Vote Creation Flow', () => {
     // 1. 메인 페이지 접속
     await page.goto('/?no-mock=true');
 
-    // 2. 'New Vote' 버튼 클릭
+    // 2. 'Create New Vote' 버튼 클릭
     console.log('--- Step 1: Navigating to Create Tab ---');
-    await page.getByRole('button', { name: 'New Vote' }).click();
-    await expect(page.locator('h2')).toContainText('New Restaurant Vote');
+    await page.getByRole('button', { name: 'Create New Vote' }).click();
+    await expect(page.locator('h2')).toContainText('New Food Vote');
 
     // 3. 투표 제목 입력
     console.log('--- Step 2: Entering Title ---');
-    await page.fill('input[placeholder*="Best Pizza"]', '동료들과 점심 회식');
+    await page.fill('input[placeholder*="lunch today?"]', '동료들과 점심 회식');
 
     // 4. 장소 검색 및 추가
     console.log('--- Step 3: Searching for Places ---');
-    const searchInput = page.locator('input[placeholder="Search restaurant..."]');
+    const searchInput = page.locator('input[placeholder="Search places..."]');
     await searchInput.fill('피자');
     await page.click('button:has-text("Search")');
     await page.locator('text=맛있는 피자집').first().click();
@@ -69,7 +96,7 @@ test.describe('Vote Creation Flow', () => {
 
     // 5. 투표 발행 (알림창 명시적 처리)
     console.log('--- Step 4: Publishing Vote ---');
-    const publishBtn = page.getByRole('button', { name: 'Publish Vote' });
+    const publishBtn = page.getByRole('button', { name: 'Create Vote' });
     
     // 알림창 대기 및 확인 클릭
     const dialogPromise = page.waitForEvent('dialog');
