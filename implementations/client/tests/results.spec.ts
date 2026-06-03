@@ -21,8 +21,9 @@ test.describe('Vote Results Flow', () => {
     });
 
     // API 모킹: 투표 목록
-    await page.route(url => url.pathname.endsWith('/votes'), async route => {
+    await page.route('**/votes', async route => {
       if (route.request().method() === 'GET') {
+        console.log(`[PLAYWRIGHT MOCK] Intercepted Votes List: ${route.request().url()}`);
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -39,7 +40,6 @@ test.describe('Vote Results Flow', () => {
           ])
         });
       } else {
-        // 투표 생성 등 POST 요청은 성공 응답
         await route.fulfill({ status: 201, body: JSON.stringify({ id: 'new-id' }) });
       }
     });
@@ -55,7 +55,7 @@ test.describe('Vote Results Flow', () => {
     });
 
     // API 모킹: 투표 결과
-    await page.route(url => url.pathname.includes('/results'), async route => {
+    await page.route('**/results', async route => {
       console.log(`[PLAYWRIGHT MOCK] Intercepted Results: ${route.request().url()}`);
       await route.fulfill({
         status: 200,
