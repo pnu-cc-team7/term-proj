@@ -4,9 +4,12 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'implementations/**'
-      - '.github/workflows/deploy-app.yml'
+  pull_request:
+    branches:
+      - main
+  paths:
+    - 'implementations/**'
+    - '.github/workflows/deploy-app.yml'
   workflow_dispatch:
 
 jobs:
