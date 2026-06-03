@@ -13,8 +13,12 @@ if (window.Kakao && !window.Kakao.isInitialized()) {
 }
 
 async function enableMocking() {
-  // 개발 모드이면서 VITE_ENABLE_MOCKING이 'true'인 경우에만 활성화
-  if (import.meta.env.VITE_ENABLE_MOCKING !== 'true') {
+  const urlParams = new URLSearchParams(window.location.search);
+  const skipMock = urlParams.get('no-mock') === 'true';
+
+  // 개발 모드이면서 VITE_ENABLE_MOCKING이 'true'인 경우에만 활성화 (테스트 파라미터가 없을 때)
+  if (import.meta.env.VITE_ENABLE_MOCKING !== 'true' || skipMock) {
+    if (skipMock) console.log('--- MSW: Mocking disabled by query param ---');
     return
   }
 
