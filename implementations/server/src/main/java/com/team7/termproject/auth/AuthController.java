@@ -28,7 +28,7 @@ public class AuthController {
 
     @PostMapping("/kakao")
     public ResponseEntity<AuthResponse> loginWithKakao(@Valid @RequestBody KakaoAuthRequest request) {
-        AuthResult result = authService.authenticateWithKakao(request.accessToken());
+        AuthResult result = authService.authenticateWithKakao(request.code());
         ResponseCookie cookie = ResponseCookie.from(properties.jwt().cookieName(), result.jwt())
                 .httpOnly(true)
                 .secure(true)
