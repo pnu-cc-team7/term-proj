@@ -6,5 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ParticipationRepository extends JpaRepository<Participation, Long> {
     boolean existsByVoteIdAndUserKakaoId(Long voteId, String userKakaoId);
 
+    void deleteByVoteIdAndUserKakaoId(Long voteId, String userKakaoId);
+
     long countByOptionId(Long optionId);
 }

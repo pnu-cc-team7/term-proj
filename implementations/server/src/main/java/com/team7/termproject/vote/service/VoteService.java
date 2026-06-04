@@ -71,13 +71,9 @@ public class VoteService {
             );
         }
 
-        if (participationRepository.existsByVoteIdAndUserKakaoId(voteId, userKakaoId)) {
-            throw new ApiException(
-                    HttpStatus.CONFLICT,
-                    "ALREADY_PARTICIPATED",
-                    "User already participated in this vote"
-            );
-        }
+        // Overwrite existing vote: delete old participation if exists
+        participationRepository.deleteByVoteIdAndUserKakaoId(vote.getId(), userKakaoId);
+        participationRepository.flush(); // Ensure deletion is synchronized before insertion
 
         Participation participation = new Participation(userKakaoId, vote, option);
         participationRepository.save(participation);
