@@ -4,7 +4,7 @@ import './index.css'
 import App from './App'
 
 // Kakao SDK 초기화
-if (window.Kakao && !window.Kakao.isInitialized()) {
+if (window.Kakao?.isInitialized && window.Kakao.init && !window.Kakao.isInitialized()) {
   const apiKey = import.meta.env.VITE_KAKAO_MAP_KEY;
   if (apiKey) {
     window.Kakao.init(apiKey);
