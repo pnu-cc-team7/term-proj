@@ -42,6 +42,22 @@ test.describe('Multi-Swipe Voting Flow', () => {
         body: JSON.stringify({ message: 'Success' })
       });
     });
+
+    // API 모킹: 결과 조회
+    await page.route('**/results', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          totalVotes: 1,
+          options: [
+            { id: 1, name: 'Option 1', count: 0 },
+            { id: 2, name: 'Option 2', count: 0 },
+            { id: 3, name: 'Option 3', count: 1 }
+          ]
+        })
+      });
+    });
   });
 
   test('should allow multiple YES swipes and only submit the last one', async ({ page }) => {
@@ -77,8 +93,8 @@ test.describe('Multi-Swipe Voting Flow', () => {
     // 마지막 YES인 opt3가 전송되어야 함
     expect(postData.optionId).toBe('opt3');
 
-    // 결과 확인
-    await expect(page.locator('h2', { hasText: 'Active Votes' })).toBeVisible();
+    // 결과 확인 (이제 리스트가 아니라 결과 페이지로 이동함)
+    await expect(page.locator('p.scribble-text', { hasText: 'Real-time Voting Standings' })).toBeVisible();
   });
 });
 
