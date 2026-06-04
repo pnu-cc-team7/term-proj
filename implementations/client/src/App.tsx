@@ -23,6 +23,7 @@ function App() {
   const [votes, setVotes] = useState<any[]>([])
   const [selectedVote, setSelectedVote] = useState<any | null>(null)
   const [currentOptionIndex, setCurrentOptionIndex] = useState(0)
+  const [lastLikedOptionId, setLastLikedOptionId] = useState<string | null>(null)
 
   const [newVoteTitle, setNewVoteTitle] = useState('')
   const [newVoteOptions, setNewVoteOptions] = useState<any[]>([])
@@ -162,6 +163,7 @@ function App() {
     if (vote) {
       setSelectedVote(vote);
       setCurrentOptionIndex(0);
+      setLastLikedOptionId(null);
       setActiveTab('vote');
     }
   }
@@ -169,28 +171,33 @@ function App() {
   const handleVote = async (optionId: string, direction: 'left' | 'right') => {
     if (!selectedVote) return;
 
+    // Track the latest "LIKE"
     if (direction === 'right') {
-      // LIKE: Participate in the vote
-      try {
-        await axios.post(`/votes/${selectedVote.id}/participate`, {
-          optionId: optionId
-        });
-        alert('Vote recorded! Thanks for participating.');
-        navTo('list');
-        await fetchVotes();
-      } catch (e: any) {
-        const errorMsg = e.response?.data?.message || e.message;
-        alert('Failed to vote: ' + errorMsg);
-        navTo('list');
-      }
+      setLastLikedOptionId(optionId);
+    }
+
+    // Move to next card or submit
+    if (currentOptionIndex < selectedVote.options.length - 1) {
+      setCurrentOptionIndex(prev => prev + 1);
     } else {
-      // NOPE: Show next option or finish
-      if (currentOptionIndex < selectedVote.options.length - 1) {
-        setCurrentOptionIndex(prev => prev + 1);
+      // Last card swiped
+      if (direction === 'right' || lastLikedOptionId) {
+        const finalOptionId = direction === 'right' ? optionId : lastLikedOptionId;
+        try {
+          await axios.post(`/votes/${selectedVote.id}/participate`, {
+            optionId: finalOptionId
+          });
+          alert('Vote recorded! Thanks for participating.');
+        } catch (e: any) {
+          const errorMsg = e.response?.data?.message || e.message;
+          alert('Failed to vote: ' + errorMsg);
+        }
       } else {
-        alert('No more options in this vote.');
-        navTo('list');
+        alert('No options selected. Feel free to vote later!');
       }
+      
+      navTo('list');
+      await fetchVotes();
     }
   }
 
