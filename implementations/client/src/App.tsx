@@ -139,6 +139,10 @@ function App() {
   }, [isLoggedIn]);
 
   const handleCreateVote = async () => {
+    if (!isLoggedIn) {
+      alert('You must be logged in to create a vote.');
+      return;
+    }
     if (!newVoteTitle || newVoteOptions.length === 0) {
       alert('Please enter a title and add at least one place.');
       return;
@@ -161,6 +165,10 @@ function App() {
   }
 
   const handleSelectVote = (voteId: string) => {
+    if (!isLoggedIn) {
+      alert('Please log in to participate in the vote swiping experience!');
+      return;
+    }
     const vote = votes.find(v => v.id === voteId);
     if (vote) {
       setSelectedVote(vote);
@@ -257,6 +265,7 @@ function App() {
         {activeTab === 'list' && (
           <VoteList 
             votes={votes} 
+            isLoggedIn={isLoggedIn}
             onSelect={handleSelectVote} 
             onViewResults={handleViewResults}
             onRefresh={fetchVotes} 
@@ -267,37 +276,54 @@ function App() {
         {activeTab === 'create' && (
           <div style={{ maxWidth: '600px', margin: '0 auto' }}>
             <h2 style={{ marginBottom: '24px' }}>New Food Vote</h2>
-            <div className="sketch-box" style={{ padding: '32px' }}>
-              <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Vote Topic</label>
-              <input className="sketch-input" placeholder="e.g., What's for lunch today?" value={newVoteTitle} onChange={(e) => setNewVoteTitle(e.target.value)} />
-              
-              <label style={{ display: 'block', fontWeight: 'bold', marginTop: '16px', marginBottom: '8px' }}>Add Place</label>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', position: 'relative' }}>
-                <input className="sketch-input" style={{ marginBottom: 0 }} placeholder="Search places..." value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && searchPlaces()} />
-                <button className="sketch-btn" onClick={searchPlaces}>Search</button>
+            {!isLoggedIn ? (
+              <div className="sketch-box" style={{ padding: '40px', textAlign: 'center' }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔒</div>
+                <h3 style={{ marginBottom: '16px' }}>Login Required</h3>
+                <p className="scribble-text" style={{ marginBottom: '24px' }}>
+                  To prevent spam and ensure fair voting,<br/>
+                  you need to log in to create your own food polls.
+                </p>
+                <SketchButton 
+                  variant="primary" 
+                  onClick={() => window.Kakao?.Auth.authorize({ redirectUri: window.location.origin })}
+                >
+                  Login with Kakao
+                </SketchButton>
+              </div>
+            ) : (
+              <div className="sketch-box" style={{ padding: '32px' }}>
+                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Vote Topic</label>
+                <input className="sketch-input" placeholder="e.g., What's for lunch today?" value={newVoteTitle} onChange={(e) => setNewVoteTitle(e.target.value)} />
                 
-                {searchResults.length > 0 && (
-                  <div className="sketch-box" style={{ position: 'absolute', top: '50px', left: 0, right: 0, zIndex: 10, maxHeight: '200px', overflowY: 'auto', padding: '8px' }}>
-                    {searchResults.map((place) => (
-                      <div key={place.id} style={{ padding: '8px', borderBottom: '1px dashed var(--rule)', cursor: 'pointer' }} onClick={() => addOption(place)}>
-                        <div style={{ fontWeight: 'bold' }}>{place.place_name}</div>
-                        <div style={{ fontSize: '12px', opacity: 0.7 }}>{place.address_name}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                <label style={{ display: 'block', fontWeight: 'bold', marginTop: '16px', marginBottom: '8px' }}>Add Place</label>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', position: 'relative' }}>
+                  <input className="sketch-input" style={{ marginBottom: 0 }} placeholder="Search places..." value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && searchPlaces()} />
+                  <button className="sketch-btn" onClick={searchPlaces}>Search</button>
+                  
+                  {searchResults.length > 0 && (
+                    <div className="sketch-box" style={{ position: 'absolute', top: '50px', left: 0, right: 0, zIndex: 10, maxHeight: '200px', overflowY: 'auto', padding: '8px' }}>
+                      {searchResults.map((place) => (
+                        <div key={place.id} style={{ padding: '8px', borderBottom: '1px dashed var(--rule)', cursor: 'pointer' }} onClick={() => addOption(place)}>
+                          <div style={{ fontWeight: 'bold' }}>{place.place_name}</div>
+                          <div style={{ fontSize: '12px', opacity: 0.7 }}>{place.address_name}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-              <div style={{ marginBottom: '24px' }}>
-                {newVoteOptions.map((opt, idx) => (
-                  <div key={idx} style={{ padding: '8px', borderBottom: '1px dashed var(--rule)', display: 'flex', justifyContent: 'space-between' }}>
-                    <span>📍 {opt.name}</span>
-                    <button onClick={() => setNewVoteOptions(newVoteOptions.filter((_, i) => i !== idx))} style={{ border: 'none', background: 'none', cursor: 'pointer' }}>✕</button>
-                  </div>
-                ))}
+                <div style={{ marginBottom: '24px' }}>
+                  {newVoteOptions.map((opt, idx) => (
+                    <div key={idx} style={{ padding: '8px', borderBottom: '1px dashed var(--rule)', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>📍 {opt.name}</span>
+                      <button onClick={() => setNewVoteOptions(newVoteOptions.filter((_, i) => i !== idx))} style={{ border: 'none', background: 'none', cursor: 'pointer' }}>✕</button>
+                    </div>
+                  ))}
+                </div>
+                <SketchButton variant="primary" style={{ width: '100%' }} onClick={handleCreateVote}>Create Vote</SketchButton>
               </div>
-              <SketchButton variant="primary" style={{ width: '100%' }} onClick={handleCreateVote}>Create Vote</SketchButton>
-            </div>
+            )}
           </div>
         )}
 

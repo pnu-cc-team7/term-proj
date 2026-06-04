@@ -10,13 +10,14 @@ interface Vote {
 
 interface VoteListProps {
   votes: Vote[];
+  isLoggedIn?: boolean;
   onSelect: (voteId: string) => void;
   onViewResults: (voteId: string) => void;
   onRefresh: () => void;
   onCreateRedirect?: () => void;
 }
 
-export const VoteList: React.FC<VoteListProps> = ({ votes, onSelect, onViewResults, onRefresh, onCreateRedirect }) => {
+export const VoteList: React.FC<VoteListProps> = ({ votes, isLoggedIn, onSelect, onViewResults, onRefresh, onCreateRedirect }) => {
   return (
     <div className="vote-list-container" style={{ maxWidth: '800px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -42,7 +43,10 @@ export const VoteList: React.FC<VoteListProps> = ({ votes, onSelect, onViewResul
                 onClick={() => onSelect(vote.id)}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <h3 style={{ margin: '0 0 12px 0', fontSize: '20px' }}>{vote.title}</h3>
+                  <h3 style={{ margin: '0 0 12px 0', fontSize: '20px' }}>
+                    {!isLoggedIn && <span style={{ marginRight: '8px', opacity: 0.6 }}>🔒</span>}
+                    {vote.title}
+                  </h3>
                   <span style={{ 
                     fontSize: '12px', 
                     padding: '2px 8px', 
