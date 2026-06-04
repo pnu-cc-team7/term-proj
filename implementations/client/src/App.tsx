@@ -22,6 +22,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [votes, setVotes] = useState<any[]>([])
   const [selectedVote, setSelectedVote] = useState<any | null>(null)
+  const [currentOptionIndex, setCurrentOptionIndex] = useState(0)
 
   const [newVoteTitle, setNewVoteTitle] = useState('')
   const [newVoteOptions, setNewVoteOptions] = useState<any[]>([])
@@ -160,7 +161,36 @@ function App() {
     const vote = votes.find(v => v.id === voteId);
     if (vote) {
       setSelectedVote(vote);
+      setCurrentOptionIndex(0);
       setActiveTab('vote');
+    }
+  }
+
+  const handleVote = async (optionId: string, direction: 'left' | 'right') => {
+    if (!selectedVote) return;
+
+    if (direction === 'right') {
+      // LIKE: Participate in the vote
+      try {
+        await axios.post(`/votes/${selectedVote.id}/participate`, {
+          optionId: optionId
+        });
+        alert('Vote recorded! Thanks for participating.');
+        navTo('list');
+        await fetchVotes();
+      } catch (e: any) {
+        const errorMsg = e.response?.data?.message || e.message;
+        alert('Failed to vote: ' + errorMsg);
+        navTo('list');
+      }
+    } else {
+      // NOPE: Show next option or finish
+      if (currentOptionIndex < selectedVote.options.length - 1) {
+        setCurrentOptionIndex(prev => prev + 1);
+      } else {
+        alert('No more options in this vote.');
+        navTo('list');
+      }
     }
   }
 
@@ -258,12 +288,20 @@ function App() {
         {activeTab === 'vote' && selectedVote && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '20px' }}>
             <h2 style={{ marginBottom: '20px' }}>{selectedVote.title}</h2>
-            <SwipeVoteCard 
-              id={selectedVote.options[0]?.id} 
-              name={selectedVote.options[0]?.name} 
-              emoji="🍱"
-              onVote={() => navTo('list')} 
-            />
+            <div style={{ position: 'relative', width: '320px', height: '420px' }}>
+              {selectedVote.options[currentOptionIndex] && (
+                <SwipeVoteCard 
+                  key={selectedVote.options[currentOptionIndex].id}
+                  id={selectedVote.options[currentOptionIndex].id} 
+                  name={selectedVote.options[currentOptionIndex].name} 
+                  emoji="🍱"
+                  onVote={handleVote} 
+                />
+              )}
+            </div>
+            <p className="scribble-text" style={{ marginTop: '20px', opacity: 0.7 }}>
+              Option {currentOptionIndex + 1} of {selectedVote.options.length}
+            </p>
           </div>
         )}
       </main>
