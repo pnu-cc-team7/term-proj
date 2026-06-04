@@ -1,372 +1,447 @@
-import { useState, useEffect, useRef } from 'react'
-import './App.css'
-import { SketchButton, StickyNote } from './components/common'
-import { SwipeVoteCard } from './components/vote/SwipeVoteCard'
-import { VoteList } from './components/vote/VoteList'
-import { VoteResult } from './components/vote/VoteResult'
-import axios from 'axios'
+import { useCallback, useEffect, useRef, useState } from 'react';
+import axios from 'axios';
+import './App.css';
+import { SketchButton, StickyNote } from './components/common';
+import { MapPlacePicker, type VoteOptionDraft } from './components/vote/MapPlacePicker';
+import { SwipeVoteCard } from './components/vote/SwipeVoteCard';
+import { VoteList } from './components/vote/VoteList';
+import { VoteResult } from './components/vote/VoteResult';
 
-// API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 axios.defaults.baseURL = API_BASE_URL;
 axios.defaults.withCredentials = true;
 
-declare global {
-  interface Window {
-    kakao: any;
-    Kakao: any;
-  }
+interface VoteOption {
+  id: string | number;
+  name: string;
+  kakao_id?: string;
+  lat?: number;
+  lng?: number;
 }
 
-function App() {
-  const [activeTab, setActiveTab] = useState('home')
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [votes, setVotes] = useState<any[]>([])
-  const [selectedVote, setSelectedVote] = useState<any | null>(null)
-  const [currentOptionIndex, setCurrentOptionIndex] = useState(0)
-  const [lastLikedOptionId, setLastLikedOptionId] = useState<string | null>(null)
-  const [resultVoteId, setResultVoteId] = useState<string | null>(null)
+interface Vote {
+  id: string;
+  title: string;
+  status: string;
+  options: VoteOption[];
+}
 
-  const [newVoteTitle, setNewVoteTitle] = useState('')
-  const [newVoteOptions, setNewVoteOptions] = useState<any[]>([])
-  const [searchKeyword, setSearchKeyword] = useState('')
-  const [searchResults, setSearchResults] = useState<any[]>([])
-  
+type Tab = 'home' | 'list' | 'create' | 'vote' | 'result';
+
+const getKakaoAuthClientId = () =>
+  String(
+    import.meta.env.VITE_KAKAO_REST_API_KEY || '',
+  ).trim();
+
+const getErrorMessage = (error: unknown) => {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as { message?: string } | undefined;
+    return data?.message || error.message;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return 'Unknown error';
+};
+
+function App() {
+  const [activeTab, setActiveTab] = useState<Tab>('home');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [votes, setVotes] = useState<Vote[]>([]);
+  const [selectedVote, setSelectedVote] = useState<Vote | null>(null);
+  const [currentOptionIndex, setCurrentOptionIndex] = useState(0);
+  const [lastLikedOptionId, setLastLikedOptionId] = useState<string | null>(null);
+  const [resultVoteId, setResultVoteId] = useState<string | null>(null);
+
+  const [newVoteTitle, setNewVoteTitle] = useState('');
+  const [newVoteOptions, setNewVoteOptions] = useState<VoteOptionDraft[]>([]);
+  const [createAttempted, setCreateAttempted] = useState(false);
+  const [createMessage, setCreateMessage] = useState<string | null>(null);
+  const [isCreatingVote, setIsCreatingVote] = useState(false);
+  const [authMessage, setAuthMessage] = useState<string | null>(null);
+
   const authProcessing = useRef(false);
 
-  useEffect(() => {
-    // Load Kakao Maps SDK (Ensure availability at App level for search)
-    const scriptId = 'kakao-maps-sdk'; 
-    const apiKey = import.meta.env.VITE_KAKAO_MAP_KEY;
-    
-    if (!document.getElementById(scriptId) && apiKey) {
-      console.log('--- App: Injecting Kakao Maps SDK ---');
-      const script = document.createElement('script');
-      script.id = scriptId;
-      script.type = 'text/javascript';
-      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&libraries=services,clusterer&autoload=false`;
-      
-      script.onload = () => {
-        if (window.kakao && window.kakao.maps) {
-          window.kakao.maps.load(() => {
-            console.log('--- App: Kakao Maps SDK Fully Initialized ---');
-          });
-        }
-      };
-      document.head.appendChild(script);
+  const navTo = (tab: Tab) => {
+    setActiveTab(tab);
+  };
+
+  const fetchVotes = useCallback(async () => {
+    try {
+      const response = await axios.get<unknown>('/votes');
+
+      if (!Array.isArray(response.data)) {
+        console.error('Unexpected /votes response:', response.data);
+        setVotes([]);
+        return;
+      }
+
+      setVotes(response.data as Vote[]);
+    } catch (error) {
+      console.error('Failed to fetch votes:', getErrorMessage(error));
+      setVotes([]);
     }
   }, []);
 
-  const navTo = (tab: string) => {
-    setActiveTab(tab)
-  }
-
-  const searchPlaces = () => {
-    if (!searchKeyword.trim()) return;
-    
-    const kakao = window.kakao;
-    if (!kakao || !kakao.maps) {
-      alert('Initializing Kakao Map service. Please try again in a moment.');
-      return;
-    }
-    
-    // Ensure services are loaded
-    kakao.maps.load(() => {
-      if (!kakao.maps.services || !kakao.maps.services.Places) {
-        console.error('Kakao Maps Services not available even after load()');
-        alert('Map service is unavailable. Please check your network or API key.');
-        return;
-      }
-      
-      const ps = new kakao.maps.services.Places();
-      ps.keywordSearch(searchKeyword, (data: any, status: any) => {
-        if (status === kakao.maps.services.Status.OK) {
-          setSearchResults(data);
-        } else {
-          alert('No results found for "' + searchKeyword + '"');
-        }
-      });
-    });
-  }
-
-  const addOption = (place: any) => {
-    if (newVoteOptions.find(opt => opt.kakao_id === place.id)) {
-      alert('This place is already added.');
-      return;
-    }
-    setNewVoteOptions([...newVoteOptions, { 
-      name: place.place_name, 
-      lat: parseFloat(place.y), 
-      lng: parseFloat(place.x), 
-      kakao_id: place.id 
-    }]);
-    setSearchKeyword('');
-    setSearchResults([]);
-  }
-
-  const fetchVotes = async () => {
-    try {
-      const response = await axios.get('/votes')
-      setVotes(response.data)
-    } catch (error: any) {
-      console.error('Failed to fetch votes:', error.message)
-    }
-  }
-
   useEffect(() => {
-    fetchVotes()
-  }, [])
+    const timer = window.setTimeout(() => {
+      void fetchVotes();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [fetchVotes]);
 
   useEffect(() => {
     const handleAuthCode = async () => {
       const code = new URL(window.location.href).searchParams.get('code');
+
       if (code && !isLoggedIn && !authProcessing.current) {
+        const handledCode = window.sessionStorage.getItem('gourmet_last_kakao_code');
+
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+        if (handledCode === code) {
+          return;
+        }
+
+        window.sessionStorage.setItem('gourmet_last_kakao_code', code);
         authProcessing.current = true;
         try {
-          console.log('--- App: Processing Auth Code ---');
           await axios.post('/auth/kakao', { code });
           setIsLoggedIn(true);
-          window.history.replaceState({}, document.title, window.location.pathname);
-        } catch (e: any) {
-          console.error('Auth processing failed:', e.response?.data || e.message);
+        } catch (error) {
+          console.error('Auth processing failed:', getErrorMessage(error));
           alert('Login failed. Please try again.');
         } finally {
           authProcessing.current = false;
         }
       }
     };
+
     handleAuthCode();
   }, [isLoggedIn]);
 
+  const handleAddVoteOption = (option: VoteOptionDraft) => {
+    setNewVoteOptions((currentOptions) => {
+      if (currentOptions.some((item) => item.kakao_id === option.kakao_id)) {
+        return currentOptions;
+      }
+
+      return [...currentOptions, option];
+    });
+    setCreateMessage(null);
+  };
+
+  const handleRemoveVoteOption = (kakaoId: string) => {
+    setNewVoteOptions((currentOptions) =>
+      currentOptions.filter((option) => option.kakao_id !== kakaoId),
+    );
+  };
+
   const handleCreateVote = async () => {
+    setCreateAttempted(true);
+    setCreateMessage(null);
+
     if (!isLoggedIn) {
-      alert('You must be logged in to create a vote.');
+      setCreateMessage('Log in before creating a vote.');
       return;
     }
-    if (!newVoteTitle || newVoteOptions.length === 0) {
-      alert('Please enter a title and add at least one place.');
+
+    if (!newVoteTitle.trim()) {
+      setCreateMessage('Enter a vote topic before publishing.');
       return;
     }
-    
+
+    if (newVoteOptions.length < 2) {
+      setCreateMessage('Add at least two restaurants to publish this vote.');
+      return;
+    }
+
     try {
+      setIsCreatingVote(true);
       await axios.post('/votes', {
-        title: newVoteTitle,
-        options: newVoteOptions
+        title: newVoteTitle.trim(),
+        options: newVoteOptions,
       });
-      alert('Vote successfully created!');
       setNewVoteTitle('');
       setNewVoteOptions([]);
+      setCreateAttempted(false);
+      setCreateMessage(null);
       setActiveTab('list');
       await fetchVotes();
-    } catch (e: any) {
-      const errorMsg = e.response?.data?.message || e.message;
-      alert('Failed to create vote: ' + errorMsg);
+    } catch (error) {
+      setCreateMessage('Failed to create vote: ' + getErrorMessage(error));
+    } finally {
+      setIsCreatingVote(false);
     }
-  }
+  };
 
   const handleSelectVote = (voteId: string) => {
     if (!isLoggedIn) {
-      alert('Please log in to participate in the vote swiping experience!');
+      alert('Please log in to participate in the vote swiping experience.');
       return;
     }
-    const vote = votes.find(v => v.id === voteId);
+
+    const vote = votes.find((item) => item.id === voteId);
+
     if (vote) {
       setSelectedVote(vote);
       setCurrentOptionIndex(0);
       setLastLikedOptionId(null);
       setActiveTab('vote');
     }
-  }
+  };
 
   const handleViewResults = (voteId: string) => {
     setResultVoteId(voteId);
     setActiveTab('result');
-  }
+  };
+
+  const handleKakaoLogin = () => {
+    setAuthMessage(null);
+
+    const clientId = getKakaoAuthClientId();
+    const redirectUri = window.location.origin;
+
+    if (!clientId) {
+      setAuthMessage(
+        'Kakao login key is missing. Add VITE_KAKAO_REST_API_KEY or VITE_KAKAO_MAP_KEY to implementations/client/.env.local.',
+      );
+      return;
+    }
+
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+    });
+
+    window.location.href = `https://kauth.kakao.com/oauth/authorize?${params.toString()}`;
+  };
 
   const handleVote = async (optionId: string, direction: 'left' | 'right') => {
     if (!selectedVote) return;
 
-    // Track the latest "LIKE"
     if (direction === 'right') {
       setLastLikedOptionId(optionId);
     }
 
-    // Move to next card or submit
     if (currentOptionIndex < selectedVote.options.length - 1) {
-      setCurrentOptionIndex(prev => prev + 1);
-    } else {
-      // Last card swiped
-      if (direction === 'right' || lastLikedOptionId) {
-        const finalOptionId = direction === 'right' ? optionId : lastLikedOptionId;
-        try {
-          await axios.post(`/votes/${selectedVote.id}/participate`, {
-            optionId: finalOptionId
-          });
-          alert('Vote recorded! Thanks for participating.');
-        } catch (e: any) {
-          const errorMsg = e.response?.data?.message || e.message;
-          alert('Failed to vote: ' + errorMsg);
-        }
-      } else {
-        alert('No options selected. Feel free to vote later!');
-      }
-      
-      setResultVoteId(selectedVote.id);
-      setActiveTab('result');
-      await fetchVotes();
+      setCurrentOptionIndex((previous) => previous + 1);
+      return;
     }
-  }
+
+    const finalOptionId = direction === 'right' ? optionId : lastLikedOptionId;
+
+    if (finalOptionId) {
+      try {
+        await axios.post(`/votes/${selectedVote.id}/participate`, {
+          optionId: finalOptionId,
+        });
+        alert('Vote recorded. Thanks for participating.');
+      } catch (error) {
+        alert('Failed to vote: ' + getErrorMessage(error));
+      }
+    } else {
+      alert('No options selected. Feel free to vote later.');
+    }
+
+    setResultVoteId(selectedVote.id);
+    setActiveTab('result');
+    await fetchVotes();
+  };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
-    // REST API Key is required for this logout endpoint
-    const restApiKey = import.meta.env.VITE_KAKAO_REST_API_KEY || import.meta.env.VITE_KAKAO_MAP_KEY;
+    const restApiKey = getKakaoAuthClientId();
     const logoutRedirectUri = window.location.origin;
-    
-    // Perform full Kakao logout to clear account session as well
+
+    if (!restApiKey) {
+      setAuthMessage('Logged out locally. Kakao logout key is not configured.');
+      return;
+    }
+
     window.location.href = `https://kauth.kakao.com/oauth/logout?client_id=${restApiKey}&logout_redirect_uri=${logoutRedirectUri}`;
-  }
+  };
+
+  const selectedOption = selectedVote?.options[currentOptionIndex];
+  const publishDisabled = newVoteOptions.length < 2 || isCreatingVote;
 
   return (
     <div className="page">
       <header className="head">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div className="head-row">
           <h1>
-            <em>Gourmet · Social</em>
+            <em>Gourmet Social</em>
             <span className="pin">
-              <span className="x" style={{ width: '6px', height: '6px', background: 'var(--accent)', transform: 'rotate(45deg)' }}></span>
+              <span className="x" />
               MVP v1.0
             </span>
           </h1>
-          <button 
-            onClick={() => isLoggedIn ? handleLogout() : window.Kakao?.Auth.authorize({ redirectUri: window.location.origin })}
-            className="sketch-btn"
-            style={{ padding: '4px 12px', fontSize: '14px', background: isLoggedIn ? 'var(--paper)' : '#FEE500' }}
+          <button
+            onClick={() => (isLoggedIn ? handleLogout() : handleKakaoLogin())}
+            className="sketch-btn login-button"
           >
             {isLoggedIn ? 'Logout' : 'Kakao Login'}
           </button>
         </div>
+        {authMessage && <p className="inline-message error auth-message">{authMessage}</p>}
       </header>
 
       <nav className="nav-bar">
         <div className="logo" onClick={() => navTo('home')}>GS</div>
-        <div className={`nav-link ${activeTab === 'home' ? 'active' : ''}`} onClick={() => navTo('home')}>Home</div>
-        <div className={`nav-link ${activeTab === 'list' ? 'active' : ''}`} onClick={() => navTo('list')}>Explore</div>
-        <div className={`nav-link ${activeTab === 'create' ? 'active' : ''}`} onClick={() => navTo('create')}>Create</div>
+        <div
+          className={`nav-link ${activeTab === 'home' ? 'active' : ''}`}
+          onClick={() => navTo('home')}
+        >
+          Home
+        </div>
+        <div
+          className={`nav-link ${activeTab === 'list' ? 'active' : ''}`}
+          onClick={() => navTo('list')}
+        >
+          Explore
+        </div>
+        <div
+          className={`nav-link ${activeTab === 'create' ? 'active' : ''}`}
+          onClick={() => navTo('create')}
+        >
+          Create
+        </div>
       </nav>
 
       <main className="canvas">
         {activeTab === 'home' && (
-          <div style={{ textAlign: 'center', marginTop: '20px' }}>
+          <div className="home-view">
             <StickyNote color="yellow">
-              <b>Ready to decide?</b><br/>
+              <b>Ready to decide?</b>
+              <br />
               Swipe for your best meal.
             </StickyNote>
-            <div style={{ fontSize: '64px', marginBottom: '16px' }}>🍔</div>
-            <h2 style={{ fontSize: '32px' }}>Pick Your Plate</h2>
-            <p className="scribble-text" style={{ marginBottom: '32px' }}>Real-time Social Food Voting Platform</p>
-            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
-              <SketchButton variant="primary" onClick={() => navTo('list')}>Find Votes</SketchButton>
+            <h2>Pick Your Plate</h2>
+            <p className="scribble-text">Real-time Social Food Voting Platform</p>
+            <div className="home-actions">
+              <SketchButton variant="primary" onClick={() => navTo('list')}>
+                Find Votes
+              </SketchButton>
               <SketchButton onClick={() => navTo('create')}>Create New Vote</SketchButton>
             </div>
           </div>
         )}
 
         {activeTab === 'list' && (
-          <VoteList 
-            votes={votes} 
+          <VoteList
+            votes={votes}
             isLoggedIn={isLoggedIn}
-            onSelect={handleSelectVote} 
+            onSelect={handleSelectVote}
             onViewResults={handleViewResults}
-            onRefresh={fetchVotes} 
+            onRefresh={fetchVotes}
             onCreateRedirect={() => navTo('create')}
           />
         )}
 
         {activeTab === 'create' && (
-          <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-            <h2 style={{ marginBottom: '24px' }}>New Food Vote</h2>
+          <div className="create-vote-container">
+            <h2>New Food Vote</h2>
             {!isLoggedIn ? (
-              <div className="sketch-box" style={{ padding: '40px', textAlign: 'center' }}>
-                <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔒</div>
-                <h3 style={{ marginBottom: '16px' }}>Login Required</h3>
-                <p className="scribble-text" style={{ marginBottom: '24px' }}>
-                  To prevent spam and ensure fair voting,<br/>
+              <div className="sketch-box login-required-box">
+                <div className="login-required-icon">GS</div>
+                <h3>Login Required</h3>
+                <p className="scribble-text">
+                  To prevent spam and ensure fair voting,
+                  <br />
                   you need to log in to create your own food polls.
                 </p>
-                <SketchButton 
-                  variant="primary" 
-                  onClick={() => window.Kakao?.Auth.authorize({ redirectUri: window.location.origin })}
+                <SketchButton
+                  variant="primary"
+                  onClick={handleKakaoLogin}
                 >
                   Login with Kakao
                 </SketchButton>
+                {authMessage && <p className="inline-message error auth-message">{authMessage}</p>}
               </div>
             ) : (
-              <div className="sketch-box" style={{ padding: '32px' }}>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '8px' }}>Vote Topic</label>
-                <input className="sketch-input" placeholder="e.g., What's for lunch today?" value={newVoteTitle} onChange={(e) => setNewVoteTitle(e.target.value)} />
-                
-                <label style={{ display: 'block', fontWeight: 'bold', marginTop: '16px', marginBottom: '8px' }}>Add Place</label>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', position: 'relative' }}>
-                  <input className="sketch-input" style={{ marginBottom: 0 }} placeholder="Search places..." value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && searchPlaces()} />
-                  <button className="sketch-btn" onClick={searchPlaces}>Search</button>
-                  
-                  {searchResults.length > 0 && (
-                    <div className="sketch-box" style={{ position: 'absolute', top: '50px', left: 0, right: 0, zIndex: 10, maxHeight: '200px', overflowY: 'auto', padding: '8px' }}>
-                      {searchResults.map((place) => (
-                        <div key={place.id} style={{ padding: '8px', borderBottom: '1px dashed var(--rule)', cursor: 'pointer' }} onClick={() => addOption(place)}>
-                          <div style={{ fontWeight: 'bold' }}>{place.place_name}</div>
-                          <div style={{ fontSize: '12px', opacity: 0.7 }}>{place.address_name}</div>
-                        </div>
-                      ))}
-                    </div>
+              <div className="create-vote-panel">
+                <div className="vote-topic-row">
+                  <label htmlFor="vote-title">Vote Topic</label>
+                  <input
+                    id="vote-title"
+                    className="sketch-input"
+                    placeholder="e.g., What's for lunch today?"
+                    value={newVoteTitle}
+                    onChange={(event) => {
+                      setNewVoteTitle(event.target.value);
+                      setCreateMessage(null);
+                    }}
+                  />
+                  {createAttempted && !newVoteTitle.trim() && (
+                    <p className="inline-message error">Enter a vote topic.</p>
                   )}
                 </div>
 
-                <div style={{ marginBottom: '24px' }}>
-                  {newVoteOptions.map((opt, idx) => (
-                    <div key={idx} style={{ padding: '8px', borderBottom: '1px dashed var(--rule)', display: 'flex', justifyContent: 'space-between' }}>
-                      <span>📍 {opt.name}</span>
-                      <button onClick={() => setNewVoteOptions(newVoteOptions.filter((_, i) => i !== idx))} style={{ border: 'none', background: 'none', cursor: 'pointer' }}>✕</button>
-                    </div>
-                  ))}
+                <MapPlacePicker
+                  options={newVoteOptions}
+                  onAddOption={handleAddVoteOption}
+                  onRemoveOption={handleRemoveVoteOption}
+                />
+
+                <div className="create-submit-bar">
+                  <div className="publish-status">
+                    {createMessage ? (
+                      <span className="inline-message error">{createMessage}</span>
+                    ) : (
+                      <span>
+                        {newVoteOptions.length < 2
+                          ? 'Add at least two restaurants to publish.'
+                          : 'Ready to publish this food vote.'}
+                      </span>
+                    )}
+                  </div>
+                  <SketchButton
+                    variant="primary"
+                    onClick={handleCreateVote}
+                    disabled={publishDisabled}
+                  >
+                    {isCreatingVote ? 'Publishing...' : '투표 게시하기'}
+                  </SketchButton>
                 </div>
-                <SketchButton variant="primary" style={{ width: '100%' }} onClick={handleCreateVote}>Create Vote</SketchButton>
               </div>
             )}
           </div>
         )}
 
         {activeTab === 'vote' && selectedVote && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '20px' }}>
-            <h2 style={{ marginBottom: '20px' }}>{selectedVote.title}</h2>
-            <div style={{ position: 'relative', width: '320px', height: '420px' }}>
-              {selectedVote.options[currentOptionIndex] && (
-                <SwipeVoteCard 
-                  key={selectedVote.options[currentOptionIndex].id}
-                  id={selectedVote.options[currentOptionIndex].id} 
-                  name={selectedVote.options[currentOptionIndex].name} 
-                  emoji="🍱"
-                  onVote={handleVote} 
+          <div className="vote-view">
+            <h2>{selectedVote.title}</h2>
+            <div className="swipe-stage">
+              {selectedOption && (
+                <SwipeVoteCard
+                  key={String(selectedOption.id)}
+                  id={String(selectedOption.id)}
+                  name={selectedOption.name}
+                  emoji="GS"
+                  onVote={handleVote}
                 />
               )}
             </div>
-            <p className="scribble-text" style={{ marginTop: '20px', opacity: 0.7 }}>
+            <p className="scribble-text">
               Option {currentOptionIndex + 1} of {selectedVote.options.length}
             </p>
           </div>
         )}
 
         {activeTab === 'result' && resultVoteId && (
-          <VoteResult 
-            voteId={resultVoteId} 
-            voteTitle={votes.find(v => v.id === resultVoteId)?.title || 'Vote Results'}
-            onBack={() => navTo('list')} 
+          <VoteResult
+            voteId={resultVoteId}
+            voteTitle={votes.find((vote) => vote.id === resultVoteId)?.title || 'Vote Results'}
+            onBack={() => navTo('list')}
           />
         )}
       </main>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

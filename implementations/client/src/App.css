@@ -1,6 +1,6 @@
 .page {
   padding: 24px 16px 56px;
-  max-width: 500px; /* 모바일 중심 레이아웃 */
+  max-width: 1080px;
   margin: 0 auto;
   position: relative;
   min-height: 100vh;
@@ -13,6 +13,13 @@
   padding-bottom: 14px;
   border-bottom: 2.5px solid var(--ink);
   margin-bottom: 24px;
+}
+
+.head-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
 }
 
 .head h1 {
@@ -35,6 +42,18 @@
   transform: rotate(-2deg);
   letter-spacing: 0.1em;
   background: var(--paper);
+}
+
+.pin .x {
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  transform: rotate(45deg);
+}
+
+.login-button {
+  padding: 4px 12px;
+  font-size: 14px;
 }
 
 .nav-bar {
@@ -61,7 +80,7 @@
 .nav-link {
   cursor: pointer;
   position: relative;
-  padding: 4px 4px;
+  padding: 4px;
   font-weight: 500;
   font-size: 18px;
 }
@@ -89,5 +108,185 @@
   border-radius: 12px;
   padding: 24px;
   min-height: 500px;
-  box-shadow: 6px 8px 0 rgba(43,38,32,0.1);
+  box-shadow: 6px 8px 0 rgba(43, 38, 32, 0.1);
+}
+
+.sketch-box {
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: 5px 5px 0 rgba(43, 38, 32, 0.18);
+}
+
+.sketch-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 2.5px solid var(--ink);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  font: 18px var(--hand);
+  box-shadow: 3px 3px 0 rgba(43, 38, 32, 0.16);
+}
+
+.sketch-input:focus {
+  outline: 3px solid rgba(249, 210, 124, 0.8);
+  outline-offset: 2px;
+}
+
+.sketch-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+  box-shadow: 2px 2px 0 var(--pencil);
+}
+
+.home-view {
+  max-width: 560px;
+  margin: 20px auto 0;
+  text-align: center;
+}
+
+.home-view h2 {
+  margin-top: 18px;
+  font-size: 32px;
+}
+
+.home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 32px;
+}
+
+.create-vote-container {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.create-vote-container > h2 {
+  margin-bottom: 24px;
+}
+
+.create-vote-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.login-required-box {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 40px;
+  text-align: center;
+}
+
+.login-required-icon {
+  display: inline-grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  margin-bottom: 16px;
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  background: var(--highlight);
+  font: 800 20px/1 var(--serif);
+}
+
+.login-required-box h3 {
+  margin-bottom: 16px;
+}
+
+.login-required-box p {
+  margin-bottom: 24px;
+}
+
+.vote-topic-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vote-topic-row label {
+  font-weight: 700;
+}
+
+.inline-message {
+  margin: 0;
+  color: var(--pencil);
+  font-size: 15px;
+}
+
+.inline-message.error {
+  color: var(--accent);
+}
+
+.auth-message {
+  margin-top: 8px;
+  text-align: right;
+}
+
+.login-required-box .auth-message {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.create-submit-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding-top: 18px;
+  border-top: 2px dashed var(--rule);
+}
+
+.publish-status {
+  color: var(--pencil);
+}
+
+.create-submit-bar .sketch-btn {
+  min-width: 180px;
+}
+
+.vote-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.vote-view h2 {
+  margin-bottom: 20px;
+}
+
+.swipe-stage {
+  position: relative;
+  width: 320px;
+  height: 420px;
+}
+
+@media (max-width: 700px) {
+  .page {
+    padding-inline: 12px;
+  }
+
+  .head-row {
+    flex-direction: column;
+  }
+
+  .canvas {
+    padding: 16px;
+  }
+
+  .create-submit-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .create-submit-bar .sketch-btn {
+    width: 100%;
+  }
 }
