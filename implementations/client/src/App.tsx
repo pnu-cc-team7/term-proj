@@ -217,6 +217,15 @@ function App() {
     }
   }
 
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    const clientId = import.meta.env.VITE_KAKAO_MAP_KEY;
+    const logoutRedirectUri = window.location.origin;
+    
+    // Perform full Kakao logout to clear account session as well
+    window.location.href = `https://kauth.kakao.com/oauth/logout?client_id=${clientId}&logout_redirect_uri=${logoutRedirectUri}`;
+  }
+
   return (
     <div className="page">
       <header className="head">
@@ -229,7 +238,7 @@ function App() {
             </span>
           </h1>
           <button 
-            onClick={() => window.Kakao?.Auth.authorize({ redirectUri: window.location.origin })}
+            onClick={() => isLoggedIn ? handleLogout() : window.Kakao?.Auth.authorize({ redirectUri: window.location.origin })}
             className="sketch-btn"
             style={{ padding: '4px 12px', fontSize: '14px', background: isLoggedIn ? 'var(--paper)' : '#FEE500' }}
           >
