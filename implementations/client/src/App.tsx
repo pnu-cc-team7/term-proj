@@ -219,11 +219,12 @@ function App() {
 
   const handleLogout = () => {
     setIsLoggedIn(false);
-    const clientId = import.meta.env.VITE_KAKAO_MAP_KEY;
+    // REST API Key is required for this logout endpoint
+    const restApiKey = import.meta.env.VITE_KAKAO_REST_API_KEY || import.meta.env.VITE_KAKAO_MAP_KEY;
     const logoutRedirectUri = window.location.origin;
     
     // Perform full Kakao logout to clear account session as well
-    window.location.href = `https://kauth.kakao.com/oauth/logout?client_id=${clientId}&logout_redirect_uri=${logoutRedirectUri}`;
+    window.location.href = `https://kauth.kakao.com/oauth/logout?client_id=${restApiKey}&logout_redirect_uri=${logoutRedirectUri}`;
   }
 
   return (
