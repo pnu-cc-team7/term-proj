@@ -1,9 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 /**
  * Helper to perform a mock login using the 'code' query parameter
  */
-async function performLogin(page: any) {
+async function performLogin(page: Page) {
   console.log('--- Helper: Performing Mock Login ---');
   // Use no-mock=true to ensure we hit Playwright routes, not MSW
   await page.goto('/?code=mock-auth-code&no-mock=true');

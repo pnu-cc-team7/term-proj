@@ -26,7 +26,7 @@ test.describe('Vote Results Flow', () => {
     await page.addInitScript(() => {
       const mockKakao = {
         maps: {
-          load: (cb: any) => setTimeout(cb, 10),
+          load: (cb: () => void) => setTimeout(cb, 10),
           LatLng: function(lat: number, lng: number) {
             return { getLat: () => lat, getLng: () => lng };
           },
@@ -36,7 +36,6 @@ test.describe('Vote Results Flow', () => {
           }
         }
       };
-      (window as any).kakao = mockKakao;
       Object.defineProperty(window, 'kakao', { get: () => mockKakao, set: () => {}, configurable: true });
     });
 

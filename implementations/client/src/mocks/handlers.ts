@@ -1,5 +1,18 @@
 import { http, HttpResponse } from 'msw'
 
+interface MockVoteOption {
+  id?: string
+  name: string
+  kakao_id?: string
+  lat?: number
+  lng?: number
+}
+
+interface MockVoteCreate {
+  title: string
+  options: MockVoteOption[]
+}
+
 export const handlers = [
   // 1. 투표 목록 조회 모킹
   http.get('/votes', () => {
@@ -20,7 +33,7 @@ export const handlers = [
 
   // 2. 투표 생성 모킹
   http.post('/votes', async ({ request }) => {
-    const newVote = await request.json() as any
+    const newVote = await request.json() as MockVoteCreate
     const savedVotes = localStorage.getItem('gourmet_votes')
     const votes = savedVotes ? JSON.parse(savedVotes) : []
     
@@ -28,7 +41,7 @@ export const handlers = [
       ...newVote,
       id: Date.now().toString(),
       status: 'open',
-      options: newVote.options.map((opt: any, i: number) => ({
+      options: newVote.options.map((opt, i) => ({
         ...opt,
         id: `opt-${Date.now()}-${i}`
       }))

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 test.describe('Multi-Swipe Voting Flow', () => {
   test.beforeEach(async ({ page }) => {
@@ -98,7 +98,7 @@ test.describe('Multi-Swipe Voting Flow', () => {
   });
 });
 
-async function swipe(page: any, direction: 'left' | 'right') {
+async function swipe(page: Page, direction: 'left' | 'right') {
   const card = page.locator('.swipe-card').first();
   const box = await card.boundingBox();
   if (box) {

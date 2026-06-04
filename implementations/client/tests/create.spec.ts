@@ -1,117 +1,201 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Vote Creation Flow', () => {
   test.beforeEach(async ({ page }) => {
-    // 브라우저 콘솔 로그 출력
-    page.on('console', msg => console.log(`[BROWSER] ${msg.type()}: ${msg.text()}`));
+    page.on('console', (message) =>
+      console.log(`[BROWSER] ${message.type()}: ${message.text()}`),
+    );
 
-    // Kakao SDK 관련 네트워크 요청 차단 및 가짜 스크립트 반환
-    await page.route('**/*kakao.com/v2/maps/sdk.js*', async route => {
+    await page.route('**/*kakao.com/v2/maps/sdk.js*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'text/javascript',
-        body: 'console.log("[MOCK] Kakao Maps SDK script loaded");'
+        body: 'console.log("[MOCK] Kakao Maps SDK script loaded");',
       });
     });
 
-    await page.route('**/*kakao.com/**', route => route.abort());
-    await page.route('**/*kakaocdn.net/**', route => route.abort());
+    await page.route('**/*kakao.com/**', (route) => route.abort());
+    await page.route('**/*kakaocdn.net/**', (route) => route.abort());
 
-    // Kakao Map SDK 모킹 (장소 검색 시뮬레이션)
     await page.addInitScript(() => {
+      type SearchData = Array<Record<string, string>>;
+      type SearchCallback = (data: SearchData, status: string) => void;
+
+      const mockData = [
+        {
+          id: 'place-1',
+          place_name: 'Maple Noodles',
+          address_name: 'Busan Geumjeong-gu Jangjeon-dong',
+          road_address_name: '12 PNU Food Street',
+          category_name: 'Food > Restaurant > Noodles',
+          distance: '180',
+          x: '129.0805',
+          y: '35.2341',
+        },
+        {
+          id: 'place-2',
+          place_name: 'Green Table',
+          address_name: 'Busan Geumjeong-gu Jangjeon-dong',
+          road_address_name: '24 PNU Food Street',
+          category_name: 'Food > Restaurant > Korean',
+          distance: '420',
+          x: '129.0812',
+          y: '35.2328',
+        },
+      ];
+
+      const mockMap = {
+        setCenter: () => undefined,
+        setBounds: () => undefined,
+        setLevel: () => undefined,
+        relayout: () => undefined,
+      };
+
       const mockKakao = {
         maps: {
-          load: (cb: any) => {
-            console.log('[MOCK SDK] maps.load called');
-            setTimeout(cb, 10);
-          },
-          LatLng: function(lat: number, lng: number) {
+          load: (callback: () => void) => window.setTimeout(callback, 10),
+          LatLng: function LatLng(lat: number, lng: number) {
             return { getLat: () => lat, getLng: () => lng };
           },
+          LatLngBounds: function LatLngBounds() {
+            return { extend: () => undefined };
+          },
+          Map: function Map() {
+            return mockMap;
+          },
+          Marker: function Marker() {
+            return {
+              setMap: () => undefined,
+              setImage: () => undefined,
+            };
+          },
+          MarkerImage: function MarkerImage(src: string) {
+            return { src };
+          },
+          Size: function Size(width: number, height: number) {
+            return { width, height };
+          },
+          Point: function Point(x: number, y: number) {
+            return { x, y };
+          },
+          InfoWindow: function InfoWindow() {
+            return {
+              open: () => undefined,
+              close: () => undefined,
+            };
+          },
+          event: {
+            addListener: () => undefined,
+          },
           services: {
-            Places: function() {
+            Places: function Places() {
               return {
-                keywordSearch: (keyword: string, callback: any) => {
+                keywordSearch: (keyword: string, callback: SearchCallback) => {
                   console.log(`[MOCK SDK] keywordSearch called for: ${keyword}`);
-                  const mockData = [
-                    { id: '1', place_name: '맛있는 피자집', address_name: '서울시 강남구', x: '127.1', y: '37.1' },
-                    { id: '2', place_name: '매콤한 떡볶이', address_name: '서울시 서초구', x: '127.2', y: '37.2' }
-                  ];
                   callback(mockData, 'OK');
-                }
+                },
               };
             },
-            Status: { OK: 'OK' }
-          }
-        }
+            Status: {
+              OK: 'OK',
+              ZERO_RESULT: 'ZERO_RESULT',
+              ERROR: 'ERROR',
+            },
+          },
+        },
       };
-      (window as any).kakao = mockKakao;
-      
-      // 진짜 SDK가 전역 변수를 덮어쓰지 못하도록 고정
+
       Object.defineProperty(window, 'kakao', {
         get: () => mockKakao,
-        set: () => { console.log('[MOCK] Attempt to overwrite window.kakao ignored'); },
-        configurable: true
+        set: () => undefined,
+        configurable: true,
+      });
+
+      Object.defineProperty(navigator, 'geolocation', {
+        value: {
+          getCurrentPosition: (success: PositionCallback) => {
+            success({
+              coords: {
+                latitude: 35.2338,
+                longitude: 129.0799,
+                accuracy: 10,
+                altitude: null,
+                altitudeAccuracy: null,
+                heading: null,
+                speed: null,
+              },
+              timestamp: Date.now(),
+            });
+          },
+        },
+        configurable: true,
       });
     });
 
-    // API 모킹: 투표 (GET/POST)
-    await page.route('**/votes', async route => {
+    await page.route('**/auth/kakao', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'user-1', kakaoId: 'kakao-1' } }),
+      });
+    });
+
+    await page.route('**/votes', async (route) => {
       if (route.request().method() === 'GET') {
-        await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
-      } else if (route.request().method() === 'POST') {
-        console.log(`[PLAYWRIGHT MOCK] Intercepted Vote Creation: ${route.request().url()}`);
         await route.fulfill({
-          status: 201,
+          status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ id: 'new-vote-999' })
+          body: JSON.stringify([]),
         });
+        return;
       }
+
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ id: 'new-vote-999' }),
+      });
     });
   });
 
-  test('should create a new vote with multiple options', async ({ page }) => {
-    // 1. 메인 페이지 접속
-    await page.goto('/?no-mock=true');
+  test('creates a vote from map based restaurant candidates', async ({ page }) => {
+    await page.goto('/?code=mock-auth-code&no-mock=true');
+    await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible({
+      timeout: 15000,
+    });
 
-    // 2. 'Create New Vote' 버튼 클릭
-    console.log('--- Step 1: Navigating to Create Tab ---');
     await page.getByRole('button', { name: 'Create New Vote' }).click();
     await expect(page.locator('h2')).toContainText('New Food Vote');
 
-    // 3. 투표 제목 입력
-    console.log('--- Step 2: Entering Title ---');
-    await page.fill('input[placeholder*="lunch today?"]', '동료들과 점심 회식');
+    await page
+      .getByPlaceholder("e.g., What's for lunch today?")
+      .fill('Team lunch near campus');
 
-    // 4. 장소 검색 및 추가
-    console.log('--- Step 3: Searching for Places ---');
-    const searchInput = page.locator('input[placeholder="Search places..."]');
-    await searchInput.fill('피자');
-    await page.click('button:has-text("Search")');
-    await page.locator('text=맛있는 피자집').first().click();
+    const currentLocationButton = page.getByRole('button', {
+      name: 'Use My Location',
+    });
+    await expect(currentLocationButton).toBeEnabled({ timeout: 15000 });
+    await currentLocationButton.click();
 
-    await searchInput.fill('떡볶이');
-    await page.keyboard.press('Enter');
-    await page.locator('text=매콤한 떡볶이').click();
+    await expect(page.getByText('Maple Noodles')).toBeVisible();
+    await page
+      .locator('.place-result')
+      .filter({ hasText: 'Maple Noodles' })
+      .getByRole('button', { name: 'Add' })
+      .click();
 
-    // 5. 투표 발행 (알림창 명시적 처리)
-    console.log('--- Step 4: Publishing Vote ---');
-    const publishBtn = page.getByRole('button', { name: 'Create Vote' });
-    
-    // 알림창 대기 및 확인 클릭
-    const dialogPromise = page.waitForEvent('dialog');
-    await publishBtn.click();
-    const dialog = await dialogPromise;
-    console.log(`--- Handled Dialog: ${dialog.message()} ---`);
-    await dialog.accept();
+    await page
+      .locator('.place-result')
+      .filter({ hasText: 'Green Table' })
+      .getByRole('button', { name: 'Add' })
+      .click();
 
-    // 6. 성공 확인 (리스트 탭으로 자동 이동 검증)
-    console.log('--- Step 5: Verifying automatic navigation to list ---');
-    
-    // 'Active Votes' 제목이 나타나는지 확인
-    const listHeader = page.locator('h2', { hasText: 'Active Votes' });
-    await expect(listHeader).toBeVisible({ timeout: 15000 });
-    
-    console.log('--- Test: Success! Vote created and redirected to list ---');
+    const publishButton = page.getByRole('button', { name: '투표 게시하기' });
+    await expect(publishButton).toBeEnabled();
+    await publishButton.click();
+
+    await expect(page.locator('h2', { hasText: 'Active Votes' })).toBeVisible({
+      timeout: 15000,
+    });
   });
 });

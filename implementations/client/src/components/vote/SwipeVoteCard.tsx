@@ -21,7 +21,9 @@ export const SwipeVoteCard: React.FC<SwipeVoteCardProps> = ({ id, name, emoji, o
   const likeOpacity = useTransform(x, [50, 150], [0, 1]);
   const nopeOpacity = useTransform(x, [-150, -50], [1, 0]);
 
-  const handleDragEnd = (_: any, info: PanInfo) => {
+  const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    void _event;
+
     if (info.offset.x > 150) {
       onVote(id, 'right');
     } else if (info.offset.x < -150) {
