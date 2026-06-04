@@ -11,11 +11,12 @@ interface Vote {
 interface VoteListProps {
   votes: Vote[];
   onSelect: (voteId: string) => void;
+  onViewResults: (voteId: string) => void;
   onRefresh: () => void;
   onCreateRedirect?: () => void;
 }
 
-export const VoteList: React.FC<VoteListProps> = ({ votes, onSelect, onRefresh, onCreateRedirect }) => {
+export const VoteList: React.FC<VoteListProps> = ({ votes, onSelect, onViewResults, onRefresh, onCreateRedirect }) => {
   return (
     <div className="vote-list-container" style={{ maxWidth: '800px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -34,24 +35,45 @@ export const VoteList: React.FC<VoteListProps> = ({ votes, onSelect, onRefresh, 
             <div 
               key={vote.id} 
               className="sketch-box" 
-              style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
-              onClick={() => onSelect(vote.id)}
+              style={{ transition: 'transform 0.2s', position: 'relative' }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <h3 style={{ margin: '0 0 12px 0', fontSize: '20px' }}>{vote.title}</h3>
-                <span style={{ 
-                  fontSize: '12px', 
-                  padding: '2px 8px', 
-                  border: '1px solid var(--ink)', 
-                  borderRadius: '12px',
-                  background: (vote.status || '').toUpperCase() === 'OPEN' ? 'var(--highlight)' : 'var(--grid)'
-                }}>
-                  {(vote.status || 'OPEN').toUpperCase()}
-                </span>
+              <div 
+                style={{ cursor: 'pointer' }}
+                onClick={() => onSelect(vote.id)}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <h3 style={{ margin: '0 0 12px 0', fontSize: '20px' }}>{vote.title}</h3>
+                  <span style={{ 
+                    fontSize: '12px', 
+                    padding: '2px 8px', 
+                    border: '1px solid var(--ink)', 
+                    borderRadius: '12px',
+                    background: (vote.status || '').toUpperCase() === 'OPEN' ? 'var(--highlight)' : 'var(--grid)'
+                  }}>
+                    {(vote.status || 'OPEN').toUpperCase()}
+                  </span>
+                </div>
+                <p className="scribble-text" style={{ margin: '0 0 16px 0', opacity: 0.8 }}>
+                  {vote.options.length} candidates available
+                </p>
               </div>
-              <p className="scribble-text" style={{ margin: '0 0 16px 0', opacity: 0.8 }}>
-                {vote.options.length} candidates available
-              </p>
+              
+              <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px dashed var(--rule)', paddingTop: '12px' }}>
+                <button 
+                  onClick={() => onViewResults(vote.id)}
+                  className="scribble-text"
+                  style={{ 
+                    background: 'none', 
+                    border: 'none', 
+                    cursor: 'pointer', 
+                    textDecoration: 'underline',
+                    color: 'var(--pencil)',
+                    fontSize: '14px'
+                  }}
+                >
+                  View Standings →
+                </button>
+              </div>
             </div>
           ))}
         </div>

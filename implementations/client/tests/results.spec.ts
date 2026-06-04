@@ -79,9 +79,25 @@ test.describe('Vote Results Flow', () => {
         body: JSON.stringify({ message: 'Success' })
       });
     });
+
+    // API 모킹: 결과 조회
+    await page.route('**/results', async route => {
+      console.log(`[PLAYWRIGHT MOCK] Intercepted Results: ${route.request().url()}`);
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          totalVotes: 10,
+          options: [
+            { id: 1, name: '김치찌개', count: 7 },
+            { id: 2, name: '된장찌개', count: 3 }
+          ]
+        })
+      });
+    });
   });
 
-  test('should participate in a vote and return to list', async ({ page }) => {
+  test('should participate in a vote and see results', async ({ page }) => {
     console.log('--- Step 1: Navigating to App ---');
     await page.goto('/?no-mock=true');
 
@@ -93,7 +109,8 @@ test.describe('Vote Results Flow', () => {
     console.log('--- Step 2: Selecting Vote Card ---');
     const voteCard = page.locator('.sketch-box').filter({ hasText: '점심 메뉴 결정' }).first();
     await expect(voteCard).toBeVisible({ timeout: 10000 });
-    await voteCard.click();
+    // 카드 바디를 클릭하여 투표 시작
+    await voteCard.locator('div').first().click();
 
     // 3. 스와이프
     console.log('--- Step 3: Swiping card ---');
@@ -108,11 +125,31 @@ test.describe('Vote Results Flow', () => {
       await page.mouse.up();
     }
 
-    // 4. 스와이프 완료 후 자동으로 목록 페이지로 이동됨
-    console.log('--- Step 4: Verifying Return to List ---');
-    const listHeader = page.locator('h2', { hasText: 'Active Votes' });
-    await expect(listHeader).toBeVisible({ timeout: 10000 });
+    // 4. 스와이프 완료 후 자동으로 결과 페이지로 이동됨
+    console.log('--- Step 4: Verifying Results Page ---');
+    const resultHeader = page.locator('p.scribble-text', { hasText: 'Real-time Voting Standings' });
+    await expect(resultHeader).toBeVisible({ timeout: 10000 });
     
-    console.log('--- Test: Success! Voted and returned to list ---');
+    // 결과 데이터 확인 (70% 바 차트 등)
+    const resultItem = page.locator('.result-item').filter({ hasText: '김치찌개' });
+    await expect(resultItem).toContainText('7 votes (70%)');
+    
+    console.log('--- Test: Success! Voted and saw results ---');
+  });
+
+  test('should view results directly from the list', async ({ page }) => {
+    await page.goto('/?no-mock=true');
+    await page.getByRole('button', { name: 'Find Votes' }).click();
+
+    console.log('--- Clicking View Standings button ---');
+    await page.getByText('View Standings →').first().click();
+
+    console.log('--- Verifying Results Page ---');
+    const resultHeader = page.locator('p.scribble-text', { hasText: 'Real-time Voting Standings' });
+    await expect(resultHeader).toBeVisible({ timeout: 10000 });
+    
+    await expect(page.locator('.result-name', { hasText: '김치찌개' })).toBeVisible();
+    
+    console.log('--- Test: Success! Viewed results directly ---');
   });
 });

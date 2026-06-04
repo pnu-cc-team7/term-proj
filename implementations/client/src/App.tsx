@@ -3,6 +3,7 @@ import './App.css'
 import { SketchButton, StickyNote } from './components/common'
 import { SwipeVoteCard } from './components/vote/SwipeVoteCard'
 import { VoteList } from './components/vote/VoteList'
+import { VoteResult } from './components/vote/VoteResult'
 import axios from 'axios'
 
 // API Configuration
@@ -24,6 +25,7 @@ function App() {
   const [selectedVote, setSelectedVote] = useState<any | null>(null)
   const [currentOptionIndex, setCurrentOptionIndex] = useState(0)
   const [lastLikedOptionId, setLastLikedOptionId] = useState<string | null>(null)
+  const [resultVoteId, setResultVoteId] = useState<string | null>(null)
 
   const [newVoteTitle, setNewVoteTitle] = useState('')
   const [newVoteOptions, setNewVoteOptions] = useState<any[]>([])
@@ -168,6 +170,11 @@ function App() {
     }
   }
 
+  const handleViewResults = (voteId: string) => {
+    setResultVoteId(voteId);
+    setActiveTab('result');
+  }
+
   const handleVote = async (optionId: string, direction: 'left' | 'right') => {
     if (!selectedVote) return;
 
@@ -196,7 +203,8 @@ function App() {
         alert('No options selected. Feel free to vote later!');
       }
       
-      navTo('list');
+      setResultVoteId(selectedVote.id);
+      setActiveTab('result');
       await fetchVotes();
     }
   }
@@ -250,6 +258,7 @@ function App() {
           <VoteList 
             votes={votes} 
             onSelect={handleSelectVote} 
+            onViewResults={handleViewResults}
             onRefresh={fetchVotes} 
             onCreateRedirect={() => navTo('create')}
           />
@@ -310,6 +319,14 @@ function App() {
               Option {currentOptionIndex + 1} of {selectedVote.options.length}
             </p>
           </div>
+        )}
+
+        {activeTab === 'result' && resultVoteId && (
+          <VoteResult 
+            voteId={resultVoteId} 
+            voteTitle={votes.find(v => v.id === resultVoteId)?.title || 'Vote Results'}
+            onBack={() => navTo('list')} 
+          />
         )}
       </main>
     </div>
