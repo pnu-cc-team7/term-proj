@@ -6,6 +6,9 @@
 help: ## 명령어 도움말 보기
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
+verify: ## 로컬에서 빌드 및 테스트 검증 (푸시 전 필수)
+	@bash bin/verify.sh
+
 api-gen: ## 어떤 언어로 코드를 생성할지 선택합니다 (대화형)
 	@echo "------------------------------------------------"
 	@echo " 🚀 Team 7 API Code Generator (D-8 Focus)"

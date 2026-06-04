@@ -7,14 +7,21 @@ test.describe('Authentication Flow', () => {
     
     // 모든 네트워크 요청 로그 (디버깅용)
     page.on('request', request => {
-      if (request.url().includes('auth')) {
+      if (request.url().includes('auth') || request.url().includes('votes')) {
         console.log(`[NETWORK] Request: ${request.method()} ${request.url()}`);
       }
     });
 
-    // 백엔드 API 모킹
+    // 알림창(alert) 자동 닫기
+    page.on('dialog', async dialog => {
+      console.log(`[DIALOG] ${dialog.type()}: ${dialog.message()}`);
+      await dialog.dismiss();
+    });
+
+    // 백엔드 API 모킹: 인증
     await page.route('**/auth/kakao', async route => {
       console.log(`[PLAYWRIGHT MOCK] Intercepted: ${route.request().url()}`);
+      const origin = route.request().headers()['origin'] || 'http://localhost:5173';
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -22,10 +29,19 @@ test.describe('Authentication Flow', () => {
           user: { id: 'kakao:test-123', kakaoId: 'test-123' }
         }),
         headers: {
-          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Origin': origin,
           'Access-Control-Allow-Credentials': 'true',
           'Set-Cookie': 'token=test-jwt-token; Path=/; HttpOnly; Secure; SameSite=None'
         }
+      });
+    });
+
+    // 백엔드 API 모킹: 투표 목록 (에러 방지용)
+    await page.route('**/votes', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([])
       });
     });
   });

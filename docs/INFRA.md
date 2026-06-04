@@ -18,15 +18,24 @@
 - **보안**: 모든 Azure 서비스 및 팀원 로컬 IP에서의 접속을 허용하도록 방화벽 설정됨.
 
 ## 3. CI/CD 파이프라인 (GitHub Actions)
-- **워크플로우**: `.github/workflows/deploy-app.yml`
-- **트리거**: `main` 브랜치 푸시 시 자동 실행
-- **검증**: 빌드 전 프론트엔드(`npm test`) 및 백엔드 유닛 테스트 자동 수행
 
-## 4. 환경 변수 (GitHub Secrets)
-배포 및 런타임에 필요한 주요 설정값들이 관리되고 있습니다.
-- `AZURE_CREDENTIALS`: Azure RBAC 인증 정보
-- `SPRING_DATASOURCE_URL`: SQL 연결 문자열
-- `AZURE_STATIC_WEB_APPS_API_TOKEN`: 프론트엔드 배포 토큰
+Azure의 무료 티어 한도를 보호하고 안정적인 개발을 위해 **계층형 배포 전략**을 사용합니다.
+
+- **[CI] 모든 Push/PR**: `deploy-app.yml`의 `test-and-verify` 작업이 실행되어 빌드 및 E2E 테스트를 수행합니다.
+- **[Staging] main 브랜치 Push**: `deploy-staging.yml`이 실행되어 **Oracle Cloud 스테이징 서버**에 자동으로 배포됩니다. (SSH 방식)
+- **[Production] 태그 Push (v*) / 수동**: `deploy-app.yml`이 실행되어 **Azure 프로덕션 서버**에 배포됩니다.
+
+## 4. 환경 변수 및 보안 (GitHub Secrets)
+
+| 환경 | 변수명 | 용도 |
+| :--- | :--- | :--- |
+| **Common** | `VITE_KAKAO_MAP_KEY` | 카카오 지도 API 키 |
+| **Azure** | `AZURE_CREDENTIALS` | Azure RBAC 인증 정보 |
+| **Azure** | `SPRING_DATASOURCE_URL` | Azure SQL 연결 문자열 |
+| **Azure** | `AZURE_STATIC_WEB_APPS_API_TOKEN` | 프론트엔드 배포 토큰 |
+| **Staging** | `STAGING_HOST` | 오라클 클라우드 IP/도메인 |
+| **Staging** | `STAGING_USER` | SSH 접속 계정 (ubuntu 등) |
+| **Staging** | `STAGING_SSH_KEY` | SSH Private Key |
 
 ## 5. 🧪 스테이징 환경 (Staging Environment - Oracle Cloud)
 Azure 프로덕션 환경의 무료 티어(F1) 한도 초과를 방지하고, 빠른 통합 테스트를 진행하기 위해 Oracle Cloud 인스턴스에 스테이징 환경이 별도로 구축되어 있습니다.

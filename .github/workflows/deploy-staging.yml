@@ -1,0 +1,30 @@
+name: Deploy to Staging (Oracle Cloud)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'implementations/**'
+      - '.github/workflows/deploy-staging.yml'
+
+jobs:
+  deploy:
+    name: Execute Remote Deployment Script
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH 🚀
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: 22
+          script: |
+            echo "Starting deployment on staging server..."
+            cd ~/term-proj-staging
+            ./deploy-staging.sh
+            echo "Deployment finished!"
