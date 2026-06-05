@@ -74,7 +74,11 @@ paths:
             schema:
               type: object
               properties:
-                optionId: { type: string }
+                optionIds:
+                  type: array
+                  items:
+                    type: string
+                  description: "선택한 모든 맛집 후보 ID 리스트"
       responses:
         '200':
           description: 참여 성공
