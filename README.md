@@ -22,6 +22,9 @@
 | 🧪 **Staging Server** | [접속하기](http://pnu-team7-stage.duckdns.org) | Oracle Cloud (통합 테스트용) |
 | 📜 **API Documentation** | [인터랙티브 문서](https://pnu-cc-team7.github.io/term-proj/) | Swagger UI (GitHub Pages) |
 
+> **💡 접속 시 유의사항 (Cold Start)**  
+> Azure 무료 티어(F1) 정책상, 약 20분간 접속이 없으면 서버가 절전 모드로 전환됩니다. **최초 접속 시 서버가 기상하는 데 약 30~60초 정도의 시간이 소요**될 수 있으니, 페이지가 바로 뜨지 않더라도 조금만 기다려 주시면 정상적으로 연결됩니다.
+
 ---
 
 ## 🛠️ 개발 가이드

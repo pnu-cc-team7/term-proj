@@ -32,7 +32,15 @@ Azure PaaS 환경을 기반으로 무중단 배포 및 자동 확장성을 확�
 2. **복합 인증 시스템**: 카카오 로그인과 서비스 자체 JWT 세션을 결합하는 과정에서 발생하는 보안 및 CORS 이슈를 `SameSite=None; Secure` 쿠키 설정과 Azure 환경 최적화를 통해 해결하였습니다.
 3. **E2E 테스트 자동화**: Playwright를 도입하여 배포 전 모든 유저 시나리오를 자동 검증함으로써, 최종 릴리즈의 안정성을 극대화하였습니다.
 
-### [4] 최종 결과물 정보
+### [4] 클라우드 자원 관리 및 최적화 전략 (Sustainability)
+**답변) 제한된 자원 하에서의 안정적 운영 방안:**
+본 팀은 Azure F1(무료) 티어의 제약 사항(하루 CPU 60분 제한, Always On 불가)을 인지하고, 안정적인 시연 및 제출을 위해 다음과 같은 최적화 전략을 적용하였습니다.
+
+1. **Spring Boot Lazy Initialization**: 애플리케이션 시작 시 모든 빈을 즉시 생성하지 않고 지연 생성하도록 설정하여, 부팅 시 발생하는 CPU 피크 부하를 최소화하고 일일 쿼터 소모량을 절약하였습니다.
+2. **Cold Start 대응**: 무료 티어의 특성상 일정 시간 접속이 없으면 서버가 절전 모드로 전환됩니다. 첫 접속 시 발생하는 대기 시간(30~60초)에 대한 안내를 문서화하여 평가 과정에서의 혼선을 방지하였습니다.
+3. **계층형 인프라 운영**: 상시 테스트는 자원이 넉넉한 Oracle Cloud 스테이징 서버에서 진행하고, 최종 결과물은 Azure 프로덕션에 배포하여 인프라 비용과 안정성을 동시에 확보하였습니다.
+
+### [5] 최종 결과물 정보
 **답변) 서비스 접속 정보 및 저장소:**
 - **Production URL**: [https://ashy-ocean-0e6441b00.7.azurestaticapps.net](https://ashy-ocean-0e6441b00.7.azurestaticapps.net)
 - **GitHub Repository**: [https://github.com/pnu-cc-team7/term-proj](https://github.com/pnu-cc-team7/term-proj)
