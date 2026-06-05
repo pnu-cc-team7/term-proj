@@ -27,7 +27,8 @@ export const VoteResult: React.FC<VoteResultProps> = ({ voteId, voteTitle, onBac
   useEffect(() => {
     const fetchResults = async () => {
       try {
-        const response = await axios.get(`/votes/${voteId}/results`);
+        // 캐시 방지를 위해 타임스탬프 추가
+        const response = await axios.get(`/votes/${voteId}/results?t=${Date.now()}`);
         setResult(response.data);
       } catch (error) {
         console.error('Failed to fetch vote results:', error);

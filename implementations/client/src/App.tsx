@@ -250,8 +250,12 @@ function App() {
       alert('No options selected. Feel free to vote later.');
     }
 
-    setResultVoteId(selectedVote.id);
-    setActiveTab('result');
+    // 결과 페이지 이동 시 새로운 조회를 강제하기 위해 상태 업데이트
+    setResultVoteId(null);
+    setTimeout(() => {
+      setResultVoteId(selectedVote.id);
+      setActiveTab('result');
+    }, 0);
     await fetchVotes();
   };
 

@@ -103,8 +103,8 @@ test.describe('Vote Results Flow', () => {
       });
     });
 
-    // API 모킹: 결과 조회
-    await page.route('**/results', async route => {
+    // API 모킹: 결과 조회 (정규표현식으로 쿼리 파라미터 대응)
+    await page.route(/\/votes\/.*\/results/, async route => {
       console.log(`[PLAYWRIGHT MOCK] Intercepted Results: ${route.request().url()}`);
       await route.fulfill({
         status: 200,
