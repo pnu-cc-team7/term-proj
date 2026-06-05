@@ -18,27 +18,27 @@
 
 ### [2] 클라우드 인프라 아키텍처
 **답변) 활용한 클라우드 서비스 및 구성:**
-Azure PaaS 환경을 기반으로 무중단 배포 및 자동 확장성을 확보하였습니다.
+Azure와 Oracle Cloud를 결합한 **하이브리드 멀티 클라우드 게이트웨이 아키텍처**를 구축하여 유연성과 안정성을 극대화하였습니다.
 
-- **Frontend**: **Azure Static Web Apps** (React + TypeScript)
-- **Backend**: **Azure App Service** (Java Spring Boot)
-- **Database**: **Azure SQL Database** (Serverless)
-- **CI/CD**: **GitHub Actions**를 통한 계층형 배포 (Staging: Oracle Cloud, Production: Azure)
+- **Gateway (Frontend Server)**: **Oracle Cloud (Nginx)** - 커스텀 도메인(`duckdns.org`) 및 SSL(HTTPS) 처리, 정적 자원 서빙.
+- **Backend**: **Azure App Service** (Java Spring Boot, **B1 Tier**) - 핵심 비즈니스 로직 및 API 처리.
+- **Database**: **Azure SQL Database** (Serverless) - 관계형 데이터 저장.
+- **CI/CD**: **GitHub Actions**를 통한 자동화 배포 및 계층형 검증 환경 구축.
 - **External API**: Kakao Maps SDK, Kakao Login API
 
 ### [3] 주요 도전과제 및 해결 전략
 **답변) 기술적 난관 및 극복 사례:**
 1. **API-First Design의 실현**: 프론트엔드와 백엔드의 병렬 개발을 위해 초기 설계 단계에서 모든 API 규격을 확립하였습니다. 이를 통해 통합 단계에서의 오류를 90% 이상 제거할 수 있었습니다.
-2. **복합 인증 시스템**: 카카오 로그인과 서비스 자체 JWT 세션을 결합하는 과정에서 발생하는 보안 및 CORS 이슈를 `SameSite=None; Secure` 쿠키 설정과 Azure 환경 최적화를 통해 해결하였습니다.
+2. **하이브리드 도메인 통합**: Azure 무료 티어의 커스텀 도메인 제약을 극복하기 위해 Oracle Cloud의 Nginx를 리버스 프록시 게이트웨이로 활용했습니다. 이를 통해 단일 도메인 환경에서의 CORS 문제를 해결하고 사용자 경험을 개선했습니다.
 3. **E2E 테스트 자동화**: Playwright를 도입하여 배포 전 모든 유저 시나리오를 자동 검증함으로써, 최종 릴리즈의 안정성을 극대화하였습니다.
 
 ### [4] 클라우드 자원 관리 및 최적화 전략 (Sustainability)
 **답변) 제한된 자원 하에서의 안정적 운영 방안:**
-본 팀은 Azure F1(무료) 티어의 제약 사항(하루 CPU 60분 제한, Always On 불가)을 인지하고, 안정적인 시연 및 제출을 위해 다음과 같은 최적화 전략을 적용하였습니다.
+본 팀은 한정된 클라우드 예산(Student Credits) 내에서 최상의 가용성을 확보하기 위해 다음과 같은 최적화 전략을 적용하였습니다.
 
-1. **Spring Boot Lazy Initialization**: 애플리케이션 시작 시 모든 빈을 즉시 생성하지 않고 지연 생성하도록 설정하여, 부팅 시 발생하는 CPU 피크 부하를 최소화하고 일일 쿼터 소모량을 절약하였습니다.
-2. **Cold Start 대응**: 무료 티어의 특성상 일정 시간 접속이 없으면 서버가 절전 모드로 전환됩니다. 첫 접속 시 발생하는 대기 시간(30~60초)에 대한 안내를 문서화하여 평가 과정에서의 혼선을 방지하였습니다.
-3. **계층형 인프라 운영**: 상시 테스트는 자원이 넉넉한 Oracle Cloud 스테이징 서버에서 진행하고, 최종 결과물은 Azure 프로덕션에 배포하여 인프라 비용과 안정성을 동시에 확보하였습니다.
+1. **B1 티어 승급 및 가용성 확보**: 평가 기간 동안의 안정적인 접속을 위해 백엔드를 B1 티어로 승급하여 CPU 쿼터 제한을 해제하고 **Always On** 환경을 구축하였습니다.
+2. **Spring Boot Lazy Initialization**: 애플리케이션 시작 시 빈 지연 생성을 적용하여 부팅 속도를 개선하고 불필요한 자원 소모를 방지하였습니다.
+3. **인프라 이원화**: 정적 자원과 API 게이트웨이는 Oracle Cloud의 Always Free 자원을 활용하고, 핵심 로직은 Azure PaaS를 활용하여 비용 효율적인 아키텍처를 완성하였습니다.
 
 ### [5] 최종 결과물 정보
 **답변) 서비스 접속 정보 및 저장소:**
