@@ -29,7 +29,7 @@ public class VoteController {
     public ResponseEntity<Void> createVote(
             @Valid @RequestBody VoteCreateRequest request
     ) {
-        log.info("Creating vote: {}", request.title());
+        log.info("Creating vote: {}", request.getTitle());
         voteService.createVote(request);
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -42,7 +42,7 @@ public class VoteController {
             @Valid @RequestBody VoteParticipateRequest request,
             @CookieValue(name = "token") String token
     ) {
-        log.info("Participating in vote {}: {}", id, request.optionId());
+        log.info("Participating in vote {}: {}", id, request.getOptionId());
         String userKakaoId = jwtTokenProvider.getKakaoId(token);;
 
         voteService.participate(id, request, userKakaoId);
