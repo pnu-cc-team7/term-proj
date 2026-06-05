@@ -4,7 +4,7 @@ import './VoteResult.css';
 import { SketchButton } from '../common';
 
 interface VoteResultOption {
-  id: number;
+  optionId: string;
   name: string;
   count: number;
 }

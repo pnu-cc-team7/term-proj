@@ -112,8 +112,8 @@ test.describe('Vote Results Flow', () => {
         body: JSON.stringify({
           totalVotes: 10,
           options: [
-            { id: 1, name: '김치찌개', count: 7 },
-            { id: 2, name: '된장찌개', count: 3 }
+            { optionId: '1', name: '김치찌개', count: 7 },
+            { optionId: '2', name: '된장찌개', count: 3 }
           ]
         })
       });

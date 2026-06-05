@@ -42,7 +42,7 @@ public class VoteController {
             @Valid @RequestBody VoteParticipateRequest request,
             @CookieValue(name = "token") String token
     ) {
-        log.info("Participating in vote {}: {}", id, request.getOptionId());
+        log.info("Participating in vote {}: {}", id, request.getOptionIds());
         String userKakaoId = jwtTokenProvider.getKakaoId(token);;
 
         voteService.participate(id, request, userKakaoId);

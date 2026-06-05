@@ -145,10 +145,13 @@ test.describe('Multi-Swipe Voting Flow', () => {
 
     const finalRequest = await apiCallPromise;
     const postData = JSON.parse(finalRequest.postData() || '{}');
-    console.log(`--- Final Vote Submitted: ${postData.optionId} ---`);
+    console.log(`--- Final Votes Submitted: ${postData.optionIds.join(', ')} ---`);
     
-    // 마지막 YES인 opt3가 전송되어야 함
-    expect(postData.optionId).toBe('opt3');
+    // 모든 YES 항목(opt1, opt2, opt3)이 포함되어야 함
+    expect(postData.optionIds).toContain('opt1');
+    expect(postData.optionIds).toContain('opt2');
+    expect(postData.optionIds).toContain('opt3');
+    expect(postData.optionIds.length).toBe(3);
 
     // 결과 확인 (이제 리스트가 아니라 결과 페이지로 이동함)
     await expect(page.locator('p.scribble-text', { hasText: 'Real-time Voting Standings' })).toBeVisible();
