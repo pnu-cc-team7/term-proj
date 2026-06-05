@@ -13,8 +13,59 @@ async function performLogin(page: Page) {
 
 test.describe('Authentication Guard - Guest Access', () => {
   test.beforeEach(async ({ page }) => {
+    // Kakao SDK 모킹
+    await page.route(/.*kakao\.com\/v2\/maps\/sdk\.js/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/javascript',
+        body: 'console.log("[MOCK] Kakao Maps SDK script loaded");',
+      });
+    });
+
+    await page.route(
+      (url) =>
+        url.hostname.includes('kakao.com') && !url.pathname.includes('sdk.js'),
+      (route) => route.abort(),
+    );
+
+    await page.route('**/*kakaocdn.net/**', (route) => route.abort());
+
+    await page.addInitScript(() => {
+      const mockKakao = {
+        maps: {
+          load: (cb: () => void) => setTimeout(cb, 10),
+          LatLng: function (lat: number, lng: number) {
+            return { getLat: () => lat, getLng: () => lng };
+          },
+          Map: function Map() {
+            return {
+              setCenter: () => undefined,
+              relayout: () => undefined,
+            };
+          },
+          Marker: function Marker() {
+            return { setMap: () => undefined };
+          },
+          InfoWindow: function InfoWindow() {
+            return { open: () => undefined };
+          },
+          services: {
+            Places: function () {
+              return { keywordSearch: () => {} };
+            },
+            Status: { OK: 'OK' },
+          },
+        },
+      };
+      Object.defineProperty(window, 'kakao', {
+        get: () => mockKakao,
+        set: () => {},
+        configurable: true,
+      });
+    });
+
     // Mock votes for guest
-    await page.route('**/votes', async route => {
+    await page.route('**/votes', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

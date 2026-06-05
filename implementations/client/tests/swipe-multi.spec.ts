@@ -8,9 +8,64 @@ test.describe('Multi-Swipe Voting Flow', () => {
       await dialog.dismiss();
     });
 
-    // Kakao SDK 모킹 (간소화)
-    await page.route('**/*kakao.com/**', async route => {
-      await route.fulfill({ status: 200, contentType: 'text/javascript', body: '' });
+    // Kakao SDK 모킹
+    await page.route(/.*kakao\.com\/v2\/maps\/sdk\.js/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/javascript',
+        body: 'console.log("[MOCK] Kakao Maps SDK script loaded");',
+      });
+    });
+
+    await page.route(
+      (url) =>
+        url.hostname.includes('kakao.com') && !url.pathname.includes('sdk.js'),
+      (route) => route.abort(),
+    );
+
+    await page.route('**/*kakaocdn.net/**', (route) => route.abort());
+
+    // 백엔드 API 모킹: 인증
+    await page.route('**/auth/kakao', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: { id: 'test-user', kakaoId: '123' } }),
+      });
+    });
+
+    await page.addInitScript(() => {
+      const mockKakao = {
+        maps: {
+          load: (cb: () => void) => setTimeout(cb, 10),
+          LatLng: function (lat: number, lng: number) {
+            return { getLat: () => lat, getLng: () => lng };
+          },
+          Map: function Map() {
+            return {
+              setCenter: () => undefined,
+              relayout: () => undefined,
+            };
+          },
+          Marker: function Marker() {
+            return { setMap: () => undefined };
+          },
+          InfoWindow: function InfoWindow() {
+            return { open: () => undefined };
+          },
+          services: {
+            Places: function () {
+              return { keywordSearch: () => {} };
+            },
+            Status: { OK: 'OK' },
+          },
+        },
+      };
+      Object.defineProperty(window, 'kakao', {
+        get: () => mockKakao,
+        set: () => {},
+        configurable: true,
+      });
     });
 
     // 백엔드 API 모킹
@@ -61,7 +116,9 @@ test.describe('Multi-Swipe Voting Flow', () => {
   });
 
   test('should allow multiple YES swipes and only submit the last one', async ({ page }) => {
-    await page.goto('/?no-mock=true');
+    await page.goto('/?code=mock-auth-code&no-mock=true');
+    await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible({ timeout: 15000 });
+    
     await page.getByRole('button', { name: 'Find Votes' }).click();
     await page.locator('.sketch-box').filter({ hasText: 'Multi Swipe Test' }).first().click();
 

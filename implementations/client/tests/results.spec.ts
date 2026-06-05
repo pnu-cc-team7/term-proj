@@ -12,31 +12,55 @@ test.describe('Vote Results Flow', () => {
     });
 
     // Kakao SDK 관련 네트워크 요청 차단 및 가짜 스크립트 반환
-    await page.route('**/*kakao.com/v2/maps/sdk.js*', async route => {
+    await page.route(/.*kakao\.com\/v2\/maps\/sdk\.js/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'text/javascript',
-        body: 'console.log("[MOCK] Kakao Maps SDK script loaded");'
+        body: 'console.log("[MOCK] Kakao Maps SDK script loaded");',
       });
     });
-    await page.route('**/*kakao.com/**', route => route.abort());
-    await page.route('**/*kakaocdn.net/**', route => route.abort());
+
+    await page.route(
+      (url) =>
+        url.hostname.includes('kakao.com') && !url.pathname.includes('sdk.js'),
+      (route) => route.abort(),
+    );
+
+    await page.route('**/*kakaocdn.net/**', (route) => route.abort());
 
     // Kakao Map SDK 모킹
     await page.addInitScript(() => {
       const mockKakao = {
         maps: {
           load: (cb: () => void) => setTimeout(cb, 10),
-          LatLng: function(lat: number, lng: number) {
+          LatLng: function (lat: number, lng: number) {
             return { getLat: () => lat, getLng: () => lng };
           },
+          Map: function Map() {
+            return {
+              setCenter: () => undefined,
+              relayout: () => undefined,
+            };
+          },
+          Marker: function Marker() {
+            return { setMap: () => undefined };
+          },
+          InfoWindow: function InfoWindow() {
+            return { open: () => undefined };
+          },
           services: {
-            Places: function() { return { keywordSearch: () => {} }; },
-            Status: { OK: 'OK' }
-          }
-        }
+            Places: function () {
+              return { keywordSearch: () => {} };
+            },
+            Status: { OK: 'OK' },
+          },
+        },
       };
-      Object.defineProperty(window, 'kakao', { get: () => mockKakao, set: () => {}, configurable: true });
+      Object.defineProperty(window, 'kakao', {
+        get: () => mockKakao,
+        set: () => {},
+        configurable: true,
+      });
     });
 
     // 백엔드 API 모킹: 인증
@@ -98,7 +122,8 @@ test.describe('Vote Results Flow', () => {
 
   test('should participate in a vote and see results', async ({ page }) => {
     console.log('--- Step 1: Navigating to App ---');
-    await page.goto('/?no-mock=true');
+    await page.goto('/?code=mock-auth-code&no-mock=true');
+    await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible({ timeout: 15000 });
 
     // 1.5 메인 버튼 클릭하여 목록 이동
     console.log('--- Step 1.5: Clicking Find Votes ---');
@@ -141,7 +166,7 @@ test.describe('Vote Results Flow', () => {
     await page.getByRole('button', { name: 'Find Votes' }).click();
 
     console.log('--- Clicking View Standings button ---');
-    await page.getByText('View Standings →').first().click();
+    await page.getByText('View Standings', { exact: true }).first().click();
 
     console.log('--- Verifying Results Page ---');
     const resultHeader = page.locator('p.scribble-text', { hasText: 'Real-time Voting Standings' });

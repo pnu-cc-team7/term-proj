@@ -2,11 +2,12 @@ import { expect, test } from '@playwright/test';
 
 test.describe('Vote Creation Flow', () => {
   test.beforeEach(async ({ page }) => {
-    page.on('console', (message) =>
+    await page.on('console', (message) =>
       console.log(`[BROWSER] ${message.type()}: ${message.text()}`),
     );
 
-    await page.route('**/*kakao.com/v2/maps/sdk.js*', async (route) => {
+    await page.route(/.*kakao\.com\/v2\/maps\/sdk\.js/, async (route) => {
+      console.log(`[PLAYWRIGHT MOCK] Fulfilling Kakao SDK: ${route.request().url()}`);
       await route.fulfill({
         status: 200,
         contentType: 'text/javascript',
@@ -14,7 +15,15 @@ test.describe('Vote Creation Flow', () => {
       });
     });
 
-    await page.route('**/*kakao.com/**', (route) => route.abort());
+    await page.route(
+      (url) =>
+        url.hostname.includes('kakao.com') && !url.pathname.includes('sdk.js'),
+      (route) => {
+        console.log(`[PLAYWRIGHT MOCK] Aborting Kakao request: ${route.request().url()}`);
+        route.abort();
+      },
+    );
+
     await page.route('**/*kakaocdn.net/**', (route) => route.abort());
 
     await page.addInitScript(() => {
@@ -177,7 +186,9 @@ test.describe('Vote Creation Flow', () => {
     await expect(currentLocationButton).toBeEnabled({ timeout: 15000 });
     await currentLocationButton.click();
 
-    await expect(page.getByText('Maple Noodles')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Maple Noodles' }),
+    ).toBeVisible();
     await page
       .locator('.place-result')
       .filter({ hasText: 'Maple Noodles' })
