@@ -1,6 +1,7 @@
 package com.team7.termproject.vote.controller;
 
 import com.team7.termproject.auth.JwtTokenProvider;
+import com.team7.termproject.common.ApiException;
 import com.team7.termproject.vote.dto.VoteCreateRequest;
 import com.team7.termproject.vote.dto.VoteParticipateRequest;
 import com.team7.termproject.vote.dto.VoteResponse;
