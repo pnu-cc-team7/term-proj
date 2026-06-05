@@ -3,8 +3,7 @@ info:
   title: Social Voting Platform API (Team 7 - Final)
   version: 2.1.2
   description: |
-    카카오 로그인 도입 및 통계 기능이 제거된 최종 실전용 명세입니다.
-    6/7 마감을 목표로 백엔드 구현 난이도를 최소화하였습니다.
+    카카오 로그인 연동 및 위치 기반 맛집 투표 기능을 제공하는 서비스의 공식 API 명세입니다.
 
 paths:
   /auth/kakao:

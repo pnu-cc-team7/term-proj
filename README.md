@@ -1,62 +1,62 @@
-# 🍽️ Gourmet Social (Team 7)
-
-본 프로젝트는 **지능형 맛집 투표 플랫폼**으로, 모든 핵심 기능 개발 및 배포가 완료되었습니다.  
-클라우드 네이티브 아키텍처(Azure PaaS)를 활용하여 실시간성 및 확장성을 확보하였습니다.
+# Gourmet Social (Team 7)
+지능형 맛집 투표 플랫폼
 
 ---
 
-## 🏆 프로젝트 최종 결과 (Final Outcome)
+## 1. 프로젝트 멤버 및 역할
+- **박혜성 (팀장)**: **프론트엔드 및 인프라 아키텍처 총괄**. React 기반 코어 UI(스와이프, 지도) 개발 및 Azure/Oracle 하이브리드 배포 파이프라인(GitHub Actions) 구축.
+- **전수범 (팀원)**: **백엔드 및 인증 시스템 개발**. 카카오 OAuth 2.0 기반 인증 서버 구축, 투표 생성 및 목록 조회 API 구현, 백엔드 초기 인프라 환경 구성.
+- **팀원 (성함/학번)**: **백엔드 비즈니스 로직 및 DB 설계**. 투표 참여 및 결과 집계 로직 고도화, Azure SQL Database 스키마 설계 및 JPA 성능 최적화.
 
-- **핵심 기능**: 카카오 로그인 연동, 위치 기반 맛집 검색 및 투표 생성, 틴더형 스와이프 투표 UI, 실시간 결과 집계.
-- **인프라**: Azure App Service(Backend), Azure Static Web Apps(Frontend), Azure SQL Database를 활용한 서버리스 아키텍처.
-- **성과**: API-First Design을 통해 프론트-백엔드 병렬 개발 효율 극대화 및 안정적인 클라우드 배포 달성.
+## 2. 프로젝트 소개 및 필요성
+본 프로젝트는 **'결정 장애'**를 겪는 현대인들을 위해, 모임 구성원들이 쉽고 재미있게 메뉴를 정할 수 있도록 돕는 **실시간 투표 플랫폼**입니다.
+- **필요성**: 기존 메신저 투표의 텍스트 기반 한계를 극복하고, 지도를 기반으로 한 시각적 정보와 재미있는 인터랙션(스와이프)을 결합하여 의사결정 효율을 높이고자 합니다.
 
----
+## 3. 관련 기술 및 시장 조사
+- **Azure PaaS**: 서버 관리 부담을 줄이고 자동 확장이 가능한 App Service와 SQL Database 활용.
+- **OAuth 2.0**: 소셜 로그인(카카오)을 통한 사용자 편의성 극대화 및 보안성 확보.
+- **API-First Design**: OpenAPI(Swagger) 명세를 우선 확립하여 프론트-백엔드 병렬 개발 생산성 확보.
 
-## 🚀 라이브 서비스 및 문서 (Quick Links)
+## 4. 개발 결과물 소개 (Architecture)
+본 서비스는 **하이브리드 멀티 클라우드 게이트웨이 아키텍처**를 채택하였습니다.
 
-| 항목 | 링크 | 비고 |
-| :--- | :--- | :--- |
-| 💻 **Frontend (Production)** | [접속하기](https://pnu-team7-prod.duckdns.org) | Azure + Oracle Nginx Gateway |
-| ⚙️ **Backend API (Production)** | [접속하기](https://pnu-team7-prod.duckdns.org/votes) | Azure + Oracle Nginx Gateway |
-| 🧪 **Staging Server** | [접속하기](http://pnu-team7-stage.duckdns.org) | Oracle Cloud (통합 테스트용) |
-| 📜 **API Documentation** | [인터랙티브 문서](https://pnu-cc-team7.github.io/term-proj/) | Swagger UI (GitHub Pages) |
-
-> **💡 접속 시 유의사항 (Cold Start)**  
-> Azure 무료 티어(F1) 정책상, 약 20분간 접속이 없으면 서버가 절전 모드로 전환됩니다. **최초 접속 시 서버가 기상하는 데 약 30~60초 정도의 시간이 소요**될 수 있으니, 페이지가 바로 뜨지 않더라도 조금만 기다려 주시면 정상적으로 연결됩니다.
-
----
-
-## 🛠️ 개발 가이드
-
-### 1. API 클라이언트 및 문서 생성
-저장소 루트에 위치한 `Makefile`을 통해 필요한 도구를 실행할 수 있습니다.
-```bash
-# API 명세를 기반으로 예쁜 HTML 문서 생성 (docs/api/index.html)
-make gen-docs
-
-# 프론트엔드용 TypeScript Axios SDK 생성
-make api-gen  # 실행 후 1번 선택
+### 아키텍처 다이어그램
+```mermaid
+graph TD
+    User([사용자]) --> Gateway[Oracle Cloud Nginx Gateway]
+    Gateway -- "정적 자원 서빙" --> Frontend[React Frontend]
+    Gateway -- "API 프록시 (HTTPS)" --> Backend[Azure App Service B1]
+    Backend -- "데이터 영속화" --> Database[Azure SQL Database]
+    Backend -- "인증 요청" --> Kakao[Kakao OAuth API]
+    Frontend -- "지도 데이터" --> Maps[Kakao Maps SDK]
 ```
 
-### 2. 기술 스택
-- **Auth**: 카카오 OAuth 2.0 (JWT + Http-Only Cookie)
-- **Map**: 카카오 지도 SDK (Kakao Maps API)
-- **Database**: Azure SQL Database (Serverless)
-- **Infra**: Azure PaaS (App Service, Static Web Apps)
-- **CI/CD**: GitHub Actions (Auto Deploy on Push to `main`)
+- **Gateway**: Oracle Cloud (Nginx) - 도메인 및 SSL 관리.
+- **Backend**: Azure App Service (Java Spring Boot, B1 Tier).
+- **Database**: Azure SQL Database (Serverless).
+- **아키텍처 강점**: 단일 도메인(Nginx)을 통해 CORS 문제를 해결하고, 핵심 로직은 Azure의 강력한 PaaS 기능을 활용함.
+
+## 5. 사용 방법 (설치 및 실행)
+### 온라인 접속
+- **[PROD] 프로덕션 주소**: [https://pnu-team7-prod.duckdns.org](https://pnu-team7-prod.duckdns.org)
+- **[STAGE] 스테이징 주소**: [http://pnu-team7-stage.duckdns.org](http://pnu-team7-stage.duckdns.org) (개발 검증용)
+
+### 로컬 실행 방법
+1. **Repository Clone**: `git clone https://github.com/pnu-cc-team7/term-proj.git`
+2. **Backend**: `cd implementations/server` 이동 후 `./gradlew bootRun`
+3. **Frontend**: `cd implementations/client` 이동 후 `npm install && npm run dev`
+
+## 6. 기대 효과 및 활용 방안
+- **모임 메뉴 결정**: 점심 식사, 회식 등 다수결이 필요한 모든 상황에서 직관적인 도구로 활용.
+- **맛집 데이터 축적**: 투표 결과를 기반으로 특정 지역의 선호 맛집 트렌드 분석 가능.
+
+## 7. AI 활용 사례
+- **개발 및 문서화 보조**: GitHub Copilot 및 Gemini CLI를 활용하여 전체 코드 및 문서의 약 **35%**를 AI 보조로 개발/작성.
+- **세부 활용**: 
+    - **인프라 자동화**: 복잡한 Nginx 리버스 프록시 설정 및 Azure CLI 명령어 생성 보조를 통해 하이브리드 아키텍처 구축 시간 단축.
+    - **로직 최적화**: React 훅 기반의 스와이프 애니메이션 로직 및 백엔드 예외 처리 구조 최적화.
+    - **방대한 문서화 관리**: 프로젝트 가이드라인, 인프라 명세서, API 문서 등 다량의 기술 문서 초안 작성 및 구조화 과정에서 AI의 요약 및 편집 도움을 받아 문서 완성도와 일관성을 높임.
+    - **테스트 자동화**: 단위 테스트 및 E2E 테스트(Playwright) 시나리오 작성 자동화를 통해 신뢰성 있는 릴리즈 환경 구축.
 
 ---
-
-## ☁️ 인프라 및 모니터링
-상세한 인프라 구성 및 접속 정보는 [docs/INFRA.md](./docs/INFRA.md)를 참고하세요.
-
----
-
-## 📈 프로젝트 상태 및 기록
-
-- **[변경 이력 (Changelog)](./CHANGELOG.md)**: 전체 마일스톤 및 릴리즈 노트 📝
-- **[로컬 검증 가이드](./docs/Local-Verification-Guide.md)**: 배포 전 필수 확인 절차 🧪
-
----
-*Created by Team 7 Master Orchestrator*
+*Gourmet Social - Cloud Native Final Project*

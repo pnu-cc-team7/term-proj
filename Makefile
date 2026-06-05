@@ -1,40 +1,32 @@
 # Makefile
+# Gourmet Social - Team 7 Final Project
 
-.PHONY: help api-gen clean gen-ts-axios gen-dart-dio gen-java gen-ts-nestjs gen-python-fastapi gen-go-server gen-custom gen-docs
+.PHONY: help api-gen clean gen-ts-axios gen-docs verify
 
 # 도움말
-help: ## 명령어 도움말 보기
+help: ## 프로젝트 주요 명령어 도움말 보기
+	@echo "------------------------------------------------"
+	@echo " 🍽️  Gourmet Social (Team 7) Project Makefile"
+	@echo "------------------------------------------------"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
-verify: ## 로컬에서 빌드 및 테스트 검증 (푸시 전 필수)
+verify: ## 전체 시스템 빌드 및 테스트 검증 (로컬)
 	@bash bin/verify.sh
 
-api-gen: ## 어떤 언어로 코드를 생성할지 선택합니다 (대화형)
+api-gen: ## API 명세 기반 코드 및 문서 생성 (대화형)
 	@echo "------------------------------------------------"
-	@echo " 🚀 Team 7 API Code Generator (D-8 Focus)"
+	@echo " 🚀 Team 7 API Code Generator"
 	@echo "------------------------------------------------"
-	@echo " 1) TypeScript (Axios) - 프론트엔드 SDK"
-	@echo " 2) Dart (Dio) - Flutter SDK"
-	@echo " 3) HTML Documentation - 팀 공유용 API 문서"
-	@echo " 4) Java (Spring Boot) - 백엔드"
-	@echo " 5) Python (FastAPI) - 백엔드"
-	@echo " 6) Go (Golang) - 백엔드"
-	@echo " 7) Clean - 생성된 파일 삭제"
+	@echo " 1) TypeScript (Axios) - 프론트엔드 API 클라이언트 생성"
+	@echo " 2) HTML Documentation - 팀 공유용 정적 API 문서 생성"
+	@echo " 3) Clean - 생성된 모든 자동화 코드 삭제"
 	@echo "------------------------------------------------"
-	@read -p " 선택 (1-7): " CHOICE; \
+	@read -p " 선택 (1-3): " CHOICE; \
 	if [ "$$CHOICE" = "1" ]; then \
 		$(MAKE) gen-ts-axios; \
 	elif [ "$$CHOICE" = "2" ]; then \
-		$(MAKE) gen-dart-dio; \
-	elif [ "$$CHOICE" = "3" ]; then \
 		$(MAKE) gen-docs; \
-	elif [ "$$CHOICE" = "4" ]; then \
-		$(MAKE) gen-java; \
-	elif [ "$$CHOICE" = "5" ]; then \
-		$(MAKE) gen-python-fastapi; \
-	elif [ "$$CHOICE" = "6" ]; then \
-		$(MAKE) gen-go-server; \
-	elif [ "$$CHOICE" = "7" ]; then \
+	elif [ "$$CHOICE" = "3" ]; then \
 		$(MAKE) clean; \
 	else \
 		echo "❌ 올바른 번호를 선택해 주세요."; \
