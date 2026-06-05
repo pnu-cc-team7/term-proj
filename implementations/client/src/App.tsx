@@ -30,7 +30,9 @@ type Tab = 'home' | 'list' | 'create' | 'vote' | 'result';
 
 const getKakaoAuthClientId = () =>
   String(
-    import.meta.env.VITE_KAKAO_REST_API_KEY || '',
+    import.meta.env.VITE_KAKAO_REST_API_KEY ||
+      import.meta.env.VITE_KAKAO_MAP_KEY ||
+      '',
   ).trim();
 
 const getErrorMessage = (error: unknown) => {
