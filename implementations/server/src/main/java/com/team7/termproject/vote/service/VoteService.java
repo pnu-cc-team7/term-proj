@@ -59,9 +59,10 @@ public class VoteService {
         participationRepository.deleteByVoteIdAndUserKakaoId(vote.getId(), userKakaoId);
         participationRepository.flush();
 
-        // 2. 새로운 선택지들 저장 (다중 선택 대응)
+        // 2. 새로운 선택지들 저장 (다중 선택 대응 및 중복 제거)
         if (request.getOptionIds() != null && !request.getOptionIds().isEmpty()) {
-            for (String idStr : request.getOptionIds()) {
+            List<String> uniqueOptionIds = request.getOptionIds().stream().distinct().toList();
+            for (String idStr : uniqueOptionIds) {
                 Long optionId = Long.parseLong(idStr);
                 VoteOption option = voteOptionRepository.findById(optionId)
                         .orElseThrow(() -> new ApiException(

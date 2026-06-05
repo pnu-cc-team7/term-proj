@@ -19,6 +19,7 @@ public class Vote {
     private Long id;
 
     @Column(nullable = false)
+    @org.hibernate.annotations.Nationalized
     private String title;
 
     @Enumerated(EnumType.STRING)

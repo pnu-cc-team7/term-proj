@@ -16,6 +16,7 @@ public class VoteOption {
     private Long id;
 
     @Column(nullable = false)
+    @org.hibernate.annotations.Nationalized
     private String name;
 
     @Column(name = "kakao_id", nullable = false)

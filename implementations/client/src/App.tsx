@@ -237,13 +237,14 @@ function App() {
       return;
     }
 
-    // 모든 선택 수집 완료: 백엔드 규격에 맞춰 optionIds 전송
+    // 모든 선택 수집 완료: 중복 제거 후 백엔드 규격에 맞춰 optionIds 전송
     try {
+      const uniqueLikedIds = Array.from(new Set(updatedLikedIds));
       await axios.post(`/votes/${selectedVote.id}/participate`, {
-        optionIds: updatedLikedIds,
+        optionIds: uniqueLikedIds,
       });
-      alert(updatedLikedIds.length > 0 
-        ? `${updatedLikedIds.length}개의 맛집을 선택하셨습니다! 결과를 확인합니다.`
+      alert(uniqueLikedIds.length > 0 
+        ? `${uniqueLikedIds.length}개의 맛집을 선택하셨습니다! 결과를 확인합니다.`
         : '선택된 맛집이 없습니다. 결과를 확인합니다.');
     } catch (error) {
       alert('투표 반영 실패: ' + getErrorMessage(error));
