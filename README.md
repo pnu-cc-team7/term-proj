@@ -17,8 +17,8 @@
 
 | 항목 | 링크 | 비고 |
 | :--- | :--- | :--- |
-| 💻 **Frontend (Production)** | [접속하기](https://ashy-ocean-0e6441b00.7.azurestaticapps.net) | Azure Static Web Apps |
-| ⚙️ **Backend API (Production)** | [접속하기](http://app-term-proj-team7-server.azurewebsites.net) | Azure App Service |
+| 💻 **Frontend (Production)** | [접속하기](https://pnu-team7-prod.duckdns.org) | Azure + Oracle Nginx Gateway |
+| ⚙️ **Backend API (Production)** | [접속하기](https://pnu-team7-prod.duckdns.org/votes) | Azure + Oracle Nginx Gateway |
 | 🧪 **Staging Server** | [접속하기](http://pnu-team7-stage.duckdns.org) | Oracle Cloud (통합 테스트용) |
 | 📜 **API Documentation** | [인터랙티브 문서](https://pnu-cc-team7.github.io/term-proj/) | Swagger UI (GitHub Pages) |
 

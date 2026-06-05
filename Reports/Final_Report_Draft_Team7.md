@@ -42,7 +42,7 @@ Azure PaaS 환경을 기반으로 무중단 배포 및 자동 확장성을 확�
 
 ### [5] 최종 결과물 정보
 **답변) 서비스 접속 정보 및 저장소:**
-- **Production URL**: [https://ashy-ocean-0e6441b00.7.azurestaticapps.net](https://ashy-ocean-0e6441b00.7.azurestaticapps.net)
+- **Production URL**: [https://pnu-team7-prod.duckdns.org](https://pnu-team7-prod.duckdns.org)
 - **GitHub Repository**: [https://github.com/pnu-cc-team7/term-proj](https://github.com/pnu-cc-team7/term-proj)
 
 ---
