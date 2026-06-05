@@ -55,28 +55,33 @@ public class VoteService {
                         "Vote not found"
                 ));
 
-        Long optionId = Long.parseLong(request.getOptionId());
-        VoteOption option = voteOptionRepository.findById(optionId)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "OPTION_NOT_FOUND",
-                        "Option not found"
-                ));
-
-        if (!option.getVote().getId().equals(vote.getId())) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "OPTION_NOT_IN_VOTE",
-                    "Option does not belong to vote"
-            );
-        }
-
-        // Overwrite existing vote: delete old participation if exists
+        // 1. 기존 참여 내역 일괄 삭제 (데이터 무결성 유지)
         participationRepository.deleteByVoteIdAndUserKakaoId(vote.getId(), userKakaoId);
-        participationRepository.flush(); // Ensure deletion is synchronized before insertion
+        participationRepository.flush();
 
-        Participation participation = new Participation(userKakaoId, vote, option);
-        participationRepository.save(participation);
+        // 2. 새로운 선택지들 저장 (다중 선택 대응)
+        if (request.getOptionIds() != null && !request.getOptionIds().isEmpty()) {
+            for (String idStr : request.getOptionIds()) {
+                Long optionId = Long.parseLong(idStr);
+                VoteOption option = voteOptionRepository.findById(optionId)
+                        .orElseThrow(() -> new ApiException(
+                                HttpStatus.NOT_FOUND,
+                                "OPTION_NOT_FOUND",
+                                "Option " + optionId + " not found"
+                        ));
+
+                if (!option.getVote().getId().equals(vote.getId())) {
+                    throw new ApiException(
+                            HttpStatus.BAD_REQUEST,
+                            "OPTION_NOT_IN_VOTE",
+                            "Option " + optionId + " does not belong to vote"
+                    );
+                }
+
+                Participation participation = new Participation(userKakaoId, vote, option);
+                participationRepository.save(participation);
+            }
+        }
     }
 
     @Transactional(readOnly = true)

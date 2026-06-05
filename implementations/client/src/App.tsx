@@ -54,7 +54,7 @@ function App() {
   const [votes, setVotes] = useState<Vote[]>([]);
   const [selectedVote, setSelectedVote] = useState<Vote | null>(null);
   const [currentOptionIndex, setCurrentOptionIndex] = useState(0);
-  const [lastLikedOptionId, setLastLikedOptionId] = useState<string | null>(null);
+  const [likedOptionIds, setLikedOptionIds] = useState<string[]>([]);
   const [resultVoteId, setResultVoteId] = useState<string | null>(null);
 
   const [newVoteTitle, setNewVoteTitle] = useState('');
@@ -191,7 +191,7 @@ function App() {
     if (vote) {
       setSelectedVote(vote);
       setCurrentOptionIndex(0);
-      setLastLikedOptionId(null);
+      setLikedOptionIds([]);
       setActiveTab('vote');
     }
   };
@@ -226,8 +226,10 @@ function App() {
   const handleVote = async (optionId: string, direction: 'left' | 'right') => {
     if (!selectedVote) return;
 
+    let updatedLikedIds = [...likedOptionIds];
     if (direction === 'right') {
-      setLastLikedOptionId(optionId);
+      updatedLikedIds.push(optionId);
+      setLikedOptionIds(updatedLikedIds);
     }
 
     if (currentOptionIndex < selectedVote.options.length - 1) {
@@ -235,19 +237,16 @@ function App() {
       return;
     }
 
-    const finalOptionId = direction === 'right' ? optionId : lastLikedOptionId;
-
-    if (finalOptionId) {
-      try {
-        await axios.post(`/votes/${selectedVote.id}/participate`, {
-          optionId: finalOptionId,
-        });
-        alert('Vote recorded. Thanks for participating.');
-      } catch (error) {
-        alert('Failed to vote: ' + getErrorMessage(error));
-      }
-    } else {
-      alert('No options selected. Feel free to vote later.');
+    // 모든 선택 수집 완료: 백엔드 규격에 맞춰 optionIds 전송
+    try {
+      await axios.post(`/votes/${selectedVote.id}/participate`, {
+        optionIds: updatedLikedIds,
+      });
+      alert(updatedLikedIds.length > 0 
+        ? `${updatedLikedIds.length}개의 맛집을 선택하셨습니다! 결과를 확인합니다.`
+        : '선택된 맛집이 없습니다. 결과를 확인합니다.');
+    } catch (error) {
+      alert('투표 반영 실패: ' + getErrorMessage(error));
     }
 
     // 결과 페이지 이동 시 새로운 조회를 강제하기 위해 상태 업데이트
