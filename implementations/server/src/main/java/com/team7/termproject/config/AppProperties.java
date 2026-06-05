@@ -22,7 +22,9 @@ public record AppProperties(Cors cors, Jwt jwt, Kakao kakao) {
             String secret,
             long expiresInSeconds,
             String cookieName,
-            String issuer
+            String issuer,
+            Boolean cookieSecure,
+            String cookieSameSite
     ) {
     }
 

@@ -31,8 +31,8 @@ public class AuthController {
         AuthResult result = authService.authenticateWithKakao(request.code());
         ResponseCookie cookie = ResponseCookie.from(properties.jwt().cookieName(), result.jwt())
                 .httpOnly(true)
-                .secure(true)
-                .sameSite("None")
+                .secure(properties.jwt().cookieSecure() != null ? properties.jwt().cookieSecure() : true)
+                .sameSite(properties.jwt().cookieSameSite() != null ? properties.jwt().cookieSameSite() : "None")
                 .path("/")
                 .maxAge(Duration.ofSeconds(properties.jwt().expiresInSeconds()))
                 .build();
