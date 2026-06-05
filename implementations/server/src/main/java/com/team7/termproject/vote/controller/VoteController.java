@@ -40,9 +40,15 @@ public class VoteController {
     public ResponseEntity<Void> participate(
             @PathVariable Long id,
             @Valid @RequestBody VoteParticipateRequest request,
-            @CookieValue(name = "token") String token
+            @CookieValue(name = "token", required = false) String token
     ) {
         log.info("Participating in vote {}: {}", id, request.getOptionIds());
+        log.info("Cookie 'token' received: {}", token != null ? "YES (length=" + token.length() + ")" : "NO (null)");
+        
+        if (token == null) {
+             throw new ApiException(HttpStatus.UNAUTHORIZED, "AUTH_REQUIRED", "Please log in first");
+        }
+
         String userKakaoId = jwtTokenProvider.getKakaoId(token);;
 
         voteService.participate(id, request, userKakaoId);
