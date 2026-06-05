@@ -70,7 +70,7 @@ export const VoteResult: React.FC<VoteResultProps> = ({ voteId, voteTitle, onBac
               : 0;
 
             return (
-              <div key={option.id} className="result-item">
+              <div key={option.optionId} className="result-item">
                 <div className="result-info">
                   <span className="result-name">📍 {option.name}</span>
                   <span className="result-count">{option.count} votes ({percentage}%)</span>
