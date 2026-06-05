@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
         name = "participations",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        columnNames = {"vote_id", "user_kakao_id"}
+                        columnNames = {"user_kakao_id", "option_id"}
                 )
         }
 )
